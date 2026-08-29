@@ -1931,7 +1931,7 @@ export default function DelegationApp() {
                 <strong>
                   {baseToolCount > 0
                     ? "WebMCP connected"
-                    : "Human workspace available"}
+                    : "WebMCP not detected"}
                 </strong>
               </div>
 
@@ -1956,17 +1956,17 @@ export default function DelegationApp() {
                   </strong>
 
                   <p>
-                    No AI backend required. Agent actions run through your WebMCP-compatible client.
+                    This app has no AI backend. Your WebMCP-compatible client supplies the Agent; the web app owns the boundary, Guardrails, human judgments, approval, and applied state.
                   </p>
                 </>
               ) : (
                 <>
                   <strong>
-                    Connect a WebMCP agent for propose &amp; challenge.
+                    Human workspace available
                   </strong>
 
                   <p>
-                    To experience the full workflow, open this page in ChatGPT or a WebMCP-enabled browser.
+                    This page is still available for human review and boundary editing. To run Agent propose, challenge, and review actions, open this page in ChatGPT or another WebMCP-enabled client.
                   </p>
 
                   <small>
