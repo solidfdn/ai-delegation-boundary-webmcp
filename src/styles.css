@@ -1,0 +1,331 @@
+﻿:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #071a44;
+  background: #fbfcfe;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 1180px;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+.topbar {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 34px;
+  border-bottom: 1px solid #dfe4eb;
+  background: white;
+}
+
+.brand {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: .22em;
+}
+
+.divider {
+  width: 1px;
+  height: 27px;
+  background: #aeb7c5;
+}
+
+.product,
+.hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.product {
+  font-size: 25px;
+}
+
+.tagline {
+  color: #62708a;
+  font-size: 13px;
+}
+
+.language {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.language button {
+  border: 0;
+  background: transparent;
+  color: #69758b;
+  cursor: pointer;
+}
+
+.language button.active {
+  color: #071a44;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 310px minmax(600px, 1fr) 310px;
+  min-height: calc(100vh - 160px);
+}
+
+.panel {
+  padding: 28px 24px;
+}
+
+.leftPanel {
+  border-right: 1px solid #e2e6ec;
+}
+
+.rightPanel {
+  border-left: 1px solid #e2e6ec;
+}
+
+.centerPanel {
+  padding: 28px 34px;
+}
+
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.card,
+.impactPanel,
+.webmcpCard {
+  background: white;
+  border: 1px solid #dfe4eb;
+  border-radius: 4px;
+}
+
+.card {
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.facts {
+  margin: 0;
+}
+
+.facts div {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.facts dt {
+  color: #69758b;
+  font-size: 12px;
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.decision {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+}
+
+.before {
+  color: #173a82;
+}
+
+.correctionCard label {
+  display: block;
+  margin: 10px 0 7px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #cad2dd;
+  border-radius: 3px;
+  padding: 10px;
+  color: #071a44;
+  background: white;
+}
+
+textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.checkboxRow {
+  display: flex !important;
+  gap: 8px;
+  align-items: center;
+  font-weight: 400 !important;
+}
+
+.checkboxRow input {
+  width: auto;
+}
+
+.primary {
+  width: 100%;
+  border: 0;
+  padding: 12px 16px;
+  margin-top: 12px;
+  background: #d9ed00;
+  color: #071a44;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hero {
+  padding: 2px 10px 24px;
+}
+
+.hero h1 {
+  margin: 0;
+  max-width: 760px;
+  font-size: clamp(42px, 4vw, 67px);
+  line-height: .98;
+  font-weight: 400;
+  letter-spacing: -.035em;
+}
+
+.hero p {
+  color: #596881;
+  margin: 16px 0 0;
+  font-size: 16px;
+}
+
+.impactPanel {
+  padding: 22px;
+  min-height: 420px;
+}
+
+.emptyState {
+  border-top: 1px solid #e1e5eb;
+  padding: 34px 0;
+  color: #69758b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  line-height: 1.45;
+}
+
+.precedentState {
+  border-top: 1px solid #e1e5eb;
+  padding-top: 34px;
+}
+
+.shift {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+}
+
+.shift strong {
+  color: #758100;
+}
+
+.arrow {
+  color: #9aa5b5;
+}
+
+.precedentState p {
+  max-width: 680px;
+  margin-top: 24px;
+  color: #43516a;
+}
+
+.honesty {
+  margin-top: 34px;
+  padding: 14px 0;
+  border-top: 1px solid #e1e5eb;
+  color: #6d788c;
+  font-size: 12px;
+}
+
+.webmcpCard {
+  margin-top: 26px;
+  padding: 18px;
+}
+
+.webmcpCard > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.webmcpCard p {
+  color: #69758b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.status {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.status.available {
+  color: #23845b;
+}
+
+.status.unavailable {
+  color: #9b4d45;
+}
+
+footer {
+  display: grid;
+  grid-template-columns: 34% 66%;
+  min-height: 88px;
+}
+
+footer .lime {
+  background: #d9ed00;
+  padding: 18px 34px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+}
+
+footer .navy {
+  background: #071a44;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  padding: 18px 34px;
+  font-size: 11px;
+}
+
+footer .navy span:last-child {
+  margin-left: auto;
+  color: #aeb9cc;
+}
+
+@media (max-width: 1280px) {
+  .workspace {
+    grid-template-columns: 280px minmax(540px, 1fr) 280px;
+  }
+}
