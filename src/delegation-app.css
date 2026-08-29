@@ -2258,3 +2258,80 @@ select:focus-visible {
     height: 50px;
   }
 }
+/* ==========================================================
+   WEBMCP SEMANTIC COLOR HIERARCHY
+   Color communicates responsibility, not decoration.
+   ========================================================== */
+
+.adb-app {
+  --agent-blue: #4f6f8f;
+}
+
+/* Active runtime status only */
+.adb-app .adb-agent-card-head .live {
+  border-color: var(--lime);
+  background: var(--lime);
+  color: var(--ink);
+}
+
+/* Human / system authority */
+.adb-app .adb-runtime-primary {
+  color: var(--ink);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/*
+ * Architecture statement:
+ * external Agent and retained authority are visually distinct.
+ */
+
+.adb-app .adb-runtime-architecture {
+  margin-top: 7px;
+}
+
+.adb-app .adb-runtime-backend {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.adb-app .adb-runtime-agent {
+  color: var(--agent-blue);
+  font-weight: 600;
+}
+
+.adb-app .adb-runtime-authority {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/*
+ * Disconnected state remains neutral.
+ * It is not an error: the human workspace still works.
+ */
+
+.adb-app .adb-agent-card-head .offline {
+  border-color: var(--line-strong);
+  background: #ffffff;
+  color: var(--muted);
+}
+
+.adb-app .adb-runtime-backend-note {
+  display: inline-block;
+
+  margin-top: 10px;
+  padding: 4px 6px;
+
+  border:
+    1px solid var(--line);
+
+  background:
+    var(--guide-soft);
+
+  color: var(--muted);
+
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}

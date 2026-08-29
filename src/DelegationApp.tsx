@@ -1951,25 +1951,41 @@ export default function DelegationApp() {
             <div className="adb-runtime-copy">
               {baseToolCount > 0 ? (
                 <>
-                  <strong>
+                  <strong className="adb-runtime-primary">
                     Agent actions available
                   </strong>
 
-                  <p>
-                    This app has no AI backend. Your WebMCP-compatible client supplies the Agent; the web app owns the boundary, Guardrails, human judgments, approval, and applied state.
+                  <p className="adb-runtime-architecture">
+                    <span className="adb-runtime-backend">
+                      No AI backend.
+                    </span>{" "}
+
+                    <span className="adb-runtime-agent">
+                      Your WebMCP-compatible client supplies the Agent;
+                    </span>{" "}
+
+                    <span className="adb-runtime-authority">
+                      the web app owns the boundary, Guardrails, human judgments, approval, and applied state.
+                    </span>
                   </p>
                 </>
               ) : (
                 <>
-                  <strong>
+                  <strong className="adb-runtime-primary">
                     Human workspace available
                   </strong>
 
-                  <p>
-                    This page is still available for human review and boundary editing. To run Agent propose, challenge, and review actions, open this page in ChatGPT or another WebMCP-enabled client.
+                  <p className="adb-runtime-architecture">
+                    <span className="adb-runtime-authority">
+                      This page is still available for human review and boundary editing.
+                    </span>{" "}
+
+                    <span className="adb-runtime-agent">
+                      To run Agent propose, challenge, and review actions, open this page in ChatGPT or another WebMCP-enabled client.
+                    </span>
                   </p>
 
-                  <small>
+                  <small className="adb-runtime-backend-note">
                     No AI backend required.
                   </small>
                 </>
