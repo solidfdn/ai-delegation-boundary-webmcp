@@ -39,6 +39,15 @@ const EVIDENCE_LEVELS: EvidenceLevel[] = [
   "STRONG"
 ];
 
+type ActivityActor = "AGENT" | "YOU" | "SYSTEM";
+
+interface ActivityEvent {
+  id: number;
+  actor: ActivityActor;
+  en: string;
+  ja: string;
+}
+
 export default function App() {
   const [lang, setLang] = useState<"en" | "ja">("en");
 
@@ -69,6 +78,12 @@ export default function App() {
   const [lastHumanEdit, setLastHumanEdit] =
     useState<string | null>(null);
 
+  const [simulationBaselines, setSimulationBaselines] =
+    useState<Record<string, PatchSimulation>>({});
+
+  const [activity, setActivity] =
+    useState<ActivityEvent[]>([]);
+
   const evaluationSet = useMemo(
     () => generateEvaluationSet(),
     []
@@ -81,6 +96,10 @@ export default function App() {
   const readyPatchIdRef = useRef(readyPatchId);
   const publishedPatchIdRef = useRef(publishedPatchId);
   const lastHumanEditRef = useRef(lastHumanEdit);
+  const simulationBaselinesRef =
+    useRef(simulationBaselines);
+  const activityRef = useRef(activity);
+  const activitySequenceRef = useRef(0);
 
   workspaceRef.current = workspace;
   patchesRef.current = patches;
@@ -89,6 +108,9 @@ export default function App() {
   readyPatchIdRef.current = readyPatchId;
   publishedPatchIdRef.current = publishedPatchId;
   lastHumanEditRef.current = lastHumanEdit;
+  simulationBaselinesRef.current =
+    simulationBaselines;
+  activityRef.current = activity;
 
   const replacePatches = (next: DecisionPatch[]) => {
     patchesRef.current = next;
@@ -120,6 +142,39 @@ export default function App() {
   const noteHumanEdit = (message: string | null) => {
     lastHumanEditRef.current = message;
     setLastHumanEdit(message);
+  };
+
+  const replaceSimulationBaselines = (
+    next: Record<string, PatchSimulation>
+  ) => {
+    simulationBaselinesRef.current = next;
+    setSimulationBaselines(next);
+  };
+
+  const replaceActivity = (
+    next: ActivityEvent[]
+  ) => {
+    activityRef.current = next;
+    setActivity(next);
+  };
+
+  const addActivity = (
+    actor: ActivityActor,
+    en: string,
+    ja: string
+  ) => {
+    activitySequenceRef.current += 1;
+
+    const event: ActivityEvent = {
+      id: activitySequenceRef.current,
+      actor,
+      en,
+      ja
+    };
+
+    replaceActivity(
+      [...activityRef.current, event].slice(-8)
+    );
   };
 
   const summarizePatch = (patch: DecisionPatch) => ({
@@ -180,7 +235,9 @@ export default function App() {
         published_patch_id:
           publishedPatchIdRef.current,
         last_human_edit:
-          lastHumanEditRef.current
+          lastHumanEditRef.current,
+        activity:
+          activityRef.current
       },
       note:
         "Synthetic demonstration environment. No candidate patch is published by these tools."
@@ -202,9 +259,16 @@ export default function App() {
 
       replacePatches(next);
       replaceSimulations({});
+      replaceSimulationBaselines({});
       markReady(null);
       markPublished(null);
       noteHumanEdit(null);
+
+      addActivity(
+        "AGENT",
+        "Agent drafted three candidate patches.",
+        "Agentが3つの候補パッチを生成"
+      );
 
       const balanced =
         next.find(
@@ -247,6 +311,16 @@ export default function App() {
 
       replaceSimulations(nextSimulations);
       selectPatch(patchId);
+
+      if (
+        simulationBaselinesRef.current[patchId]
+      ) {
+        addActivity(
+          "AGENT",
+          "Agent replayed the revised human boundary.",
+          "Agentが人の変更後の境界を再評価"
+        );
+      }
 
       return {
         status: "success",
@@ -371,6 +445,16 @@ export default function App() {
       replacePatches(nextPatches);
       selectPatch(patchId);
 
+      const previousSimulation =
+        simulationsRef.current[patchId];
+
+      if (previousSimulation) {
+        replaceSimulationBaselines({
+          ...simulationBaselinesRef.current,
+          [patchId]: previousSimulation
+        });
+      }
+
       const nextSimulations = {
         ...simulationsRef.current
       };
@@ -378,6 +462,12 @@ export default function App() {
       delete nextSimulations[patchId];
 
       replaceSimulations(nextSimulations);
+
+      addActivity(
+        "AGENT",
+        `Agent revised ${patch.scope}.`,
+        `Agentが${patch.scope}の条件を修正`
+      );
 
       if (
         readyPatchIdRef.current === patchId
@@ -430,6 +520,12 @@ export default function App() {
 
       markPublished(patchId);
       markReady(null);
+
+      addActivity(
+        "AGENT",
+        `Agent published ${patch.scope} after human authorization.`,
+        `人の明示承認後、Agentが${patch.scope}を公開`
+      );
 
       return {
         status: "success",
@@ -496,10 +592,19 @@ export default function App() {
 
     replacePatches([]);
     replaceSimulations({});
+    replaceSimulationBaselines({});
     selectPatch(null);
     markReady(null);
     markPublished(null);
     noteHumanEdit(null);
+
+    replaceActivity([]);
+
+    addActivity(
+      "YOU",
+      `You corrected ${workspace.agentDecision} → ${workspace.humanCorrection.decision}.`,
+      `人が ${workspace.agentDecision} → ${workspace.humanCorrection.decision} に修正`
+    );
   };
 
   const runSimulation = () => {
@@ -630,6 +735,16 @@ export default function App() {
       conditions
     };
 
+    const previousSimulation =
+      simulationsRef.current[revised.id];
+
+    if (previousSimulation) {
+      replaceSimulationBaselines({
+        ...simulationBaselinesRef.current,
+        [revised.id]: previousSimulation
+      });
+    }
+
     replacePatches(
       patchesRef.current.map((patch) =>
         patch.id === revised.id
@@ -655,12 +770,102 @@ export default function App() {
       formatCondition(key, "")
         .trim();
 
-    noteHumanEdit(
+    const editMessage =
       `${label}: ${String(before)} → ${
         value || "ANY"
-      }`
+      }`;
+
+    noteHumanEdit(editMessage);
+
+    addActivity(
+      "YOU",
+      `You changed ${editMessage}.`,
+      `人が ${editMessage} に変更`
     );
   };
+
+  const toggleReady = (
+    patchId: string
+  ) => {
+    if (readyPatchIdRef.current === patchId) {
+      markReady(null);
+
+      addActivity(
+        "YOU",
+        "You withdrew publication readiness.",
+        "人が公開準備状態を解除"
+      );
+
+      return;
+    }
+
+    markReady(patchId);
+
+    const patch =
+      patchesRef.current.find(
+        (candidate) =>
+          candidate.id === patchId
+      );
+
+    addActivity(
+      "YOU",
+      `You marked ${patch?.scope ?? patchId} ready to publish.`,
+      `人が${patch?.scope ?? patchId}を公開準備完了に設定`
+    );
+  };
+
+  const resetDemo = () => {
+    const resetWorkspace: WorkspaceState = {
+      ...initialWorkspace,
+      observedCase: {
+        ...initialWorkspace.observedCase
+      },
+      humanCorrection: {
+        ...initialWorkspace.humanCorrection
+      }
+    };
+
+    workspaceRef.current = resetWorkspace;
+    setWorkspace(resetWorkspace);
+
+    replacePatches([]);
+    replaceSimulations({});
+    replaceSimulationBaselines({});
+    selectPatch(null);
+    markReady(null);
+    markPublished(null);
+    noteHumanEdit(null);
+    replaceActivity([]);
+
+    activitySequenceRef.current = 0;
+  };
+
+  const selectedBaseline =
+    selectedPatchId
+      ? simulationBaselines[selectedPatchId]
+      : undefined;
+
+  const impactDelta =
+    selectedSimulation &&
+    selectedBaseline
+      ? {
+          changed:
+            selectedSimulation.changed -
+            selectedBaseline.changed,
+          aligned:
+            selectedSimulation.aligned -
+            selectedBaseline.aligned,
+          counterexamples:
+            selectedSimulation.counterexamples -
+            selectedBaseline.counterexamples,
+          reviews:
+            selectedSimulation.reviewsTransitioned -
+            selectedBaseline.reviewsTransitioned
+        }
+      : null;
+
+  const deltaLabel = (value: number) =>
+    `${value > 0 ? "+" : ""}${value}`;
 
   const renderLevelOptions = () => (
     <>
@@ -684,6 +889,15 @@ export default function App() {
         <div className="tagline">
           A pull request for agent decisions.
         </div>
+
+        <button
+          className="resetButton"
+          onClick={resetDemo}
+        >
+          {lang === "ja"
+            ? "デモをリセット"
+            : "Reset demo"}
+        </button>
 
         <div className="language">
           <button
@@ -1171,6 +1385,83 @@ export default function App() {
                     </div>
                   </div>
 
+                  {impactDelta && lastHumanEdit && (
+                    <div className="impactDelta">
+                      <div className="deltaIntro">
+                        <span className="eyebrow">
+                          {lang === "ja"
+                            ? "人の変更による差分"
+                            : "WHAT YOUR EDIT CHANGED"}
+                        </span>
+
+                        <strong>
+                          {lastHumanEdit}
+                        </strong>
+                      </div>
+
+                      <div className="deltaMetrics">
+                        <div>
+                          <span>
+                            {lang === "ja"
+                              ? "影響する判断"
+                              : "Affected decisions"}
+                          </span>
+                          <strong>
+                            {deltaLabel(
+                              impactDelta.changed
+                            )}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            {lang === "ja"
+                              ? "参照判断との一致"
+                              : "Reference aligned"}
+                          </span>
+                          <strong>
+                            {deltaLabel(
+                              impactDelta.aligned
+                            )}
+                          </strong>
+                        </div>
+
+                        <div
+                          className={
+                            impactDelta.counterexamples >
+                            0
+                              ? "deltaRisk"
+                              : ""
+                          }
+                        >
+                          <span>
+                            {lang === "ja"
+                              ? "新たな反例"
+                              : "Counterexamples"}
+                          </span>
+                          <strong>
+                            {deltaLabel(
+                              impactDelta.counterexamples
+                            )}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            {lang === "ja"
+                              ? "人レビューから移る判断"
+                              : "Reviews transitioned"}
+                          </span>
+                          <strong>
+                            {deltaLabel(
+                              impactDelta.reviews
+                            )}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="counterexampleArea">
                     <div className="cardTitle">
                       {t.counterexamples}
@@ -1249,11 +1540,8 @@ export default function App() {
                             : "readyAction"
                         }
                         onClick={() =>
-                          markReady(
-                            readyPatchId ===
+                          toggleReady(
                             selectedPatch.id
-                              ? null
-                              : selectedPatch.id
                           )
                         }
                       >
@@ -1275,6 +1563,43 @@ export default function App() {
                 </div>
               )}
           </div>
+
+          {activity.length > 0 && (
+            <div className="activityPanel">
+              <div className="activityHeader">
+                <span className="sectionLabel">
+                  ACTIVITY
+                </span>
+
+                <span>
+                  Human × Agent
+                </span>
+              </div>
+
+              <div className="activityRows">
+                {activity
+                  .slice(-5)
+                  .map((event) => (
+                    <div
+                      className="activityRow"
+                      key={event.id}
+                    >
+                      <span
+                        className={`activityActor ${event.actor.toLowerCase()}`}
+                      >
+                        {event.actor}
+                      </span>
+
+                      <p>
+                        {lang === "ja"
+                          ? event.ja
+                          : event.en}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="rightPanel panel">
@@ -1406,5 +1731,6 @@ export default function App() {
     </div>
   );
 }
+
 
 

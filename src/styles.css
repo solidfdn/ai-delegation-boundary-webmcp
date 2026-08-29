@@ -702,3 +702,170 @@ footer .navy span:last-child {
       repeat(3, minmax(0, 1fr));
   }
 }
+
+.resetButton {
+  margin-left: auto;
+  border: 0;
+  border-bottom: 1px solid #c6ced9;
+  background: transparent;
+  padding: 7px 2px;
+  color: #66738a;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.resetButton:hover {
+  color: #071a44;
+  border-color: #071a44;
+}
+
+.language {
+  margin-left: 0;
+}
+
+.impactDelta {
+  margin-top: 18px;
+  border-top: 1px solid #dfe4eb;
+  border-bottom: 1px solid #dfe4eb;
+}
+
+.deltaIntro {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: baseline;
+  padding: 14px 2px 11px;
+}
+
+.deltaIntro strong {
+  font-size: 10px;
+  font-weight: 500;
+  color: #536178;
+}
+
+.deltaMetrics {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  border-top: 1px solid #e5e8ee;
+}
+
+.deltaMetrics > div {
+  padding: 14px;
+  border-right: 1px solid #e5e8ee;
+}
+
+.deltaMetrics > div:last-child {
+  border-right: 0;
+}
+
+.deltaMetrics span {
+  display: block;
+  min-height: 24px;
+  color: #6a768a;
+  font-size: 9px;
+}
+
+.deltaMetrics strong {
+  display: block;
+  margin-top: 5px;
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.deltaMetrics .deltaRisk strong {
+  color: #b13a35;
+}
+
+.activityPanel {
+  margin-top: 18px;
+  border-top: 1px solid #dfe4eb;
+  border-bottom: 1px solid #dfe4eb;
+  background: #fff;
+  padding: 16px 2px 4px;
+}
+
+.activityHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 4px 10px;
+}
+
+.activityHeader .sectionLabel {
+  margin: 0;
+}
+
+.activityHeader > span:last-child {
+  color: #727e92;
+  font-size: 10px;
+}
+
+.activityRows {
+  border-top: 1px solid #e5e8ee;
+}
+
+.activityRow {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 14px;
+  align-items: center;
+  min-height: 42px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.activityRow:last-child {
+  border-bottom: 0;
+}
+
+.activityRow p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #263650;
+}
+
+.activityActor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  padding: 4px 5px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .07em;
+}
+
+.activityActor.you {
+  background: #d9ed00;
+  color: #071a44;
+}
+
+.activityActor.agent {
+  background: #071a44;
+  color: #fff;
+}
+
+.activityActor.system {
+  border: 1px solid #cbd2dc;
+  color: #66738a;
+}
+
+@media (max-width: 1400px) {
+  .deltaMetrics {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .deltaMetrics > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .deltaMetrics > div:nth-child(-n+2) {
+    border-bottom: 1px solid #e5e8ee;
+  }
+}
