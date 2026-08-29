@@ -2103,7 +2103,7 @@ select:focus-visible {
   position: absolute;
   z-index: 2;
 
-  top: -26px;
+  top: -40px;
   right: 64px;
 
   width: 54px;
@@ -2223,7 +2223,7 @@ select:focus-visible {
 
 @media (max-width: 900px) {
   .adb-app .adb-revision-logo {
-    top: -25px;
+    top: -39px;
     right: 56px;
 
     width: 52px;
@@ -2238,7 +2238,7 @@ select:focus-visible {
 
 @media (max-width: 520px) {
   .adb-app .adb-revision-logo {
-    top: -24px;
+    top: -38px;
     right: 46px;
 
     width: 50px;
