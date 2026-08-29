@@ -2221,9 +2221,9 @@ select:focus-visible {
       20px
     );
 
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.25;
-  letter-spacing: -.012em;
+  letter-spacing: .035em;
 }
 
 /* Existing left-top header remains unchanged. */
