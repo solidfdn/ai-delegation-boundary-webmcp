@@ -3,63 +3,73 @@
     title: "One correction can change many future decisions.",
     subtitle:
       "Review what else would change before teaching the agent.",
-    input: "INPUT / HUMAN CORRECTION",
+    input: "HUMAN CORRECTION",
     observed: "Observed case",
     agentBefore: "Agent decision — before",
     correction: "Your correction",
     rationale: "Rationale",
-    precedent: "Use this correction as a precedent",
+    precedent: "Use this correction to draft candidate rules",
     record: "Record correction",
-    simulate: "Generate & simulate patches",
-    impact: "IMPACT SIMULATION",
+    simulate: "Generate rules & review impact",
+    impact: "IMPACT REVIEW",
     impactEmpty:
-      "No generalized rule exists yet. Record the correction, then simulate candidate patches.",
-    candidates: "CANDIDATE PATCHES",
-    candidatesEmpty: "No candidate patches yet.",
+      "This correction has not been generalized yet.",
+    candidates: "CANDIDATE RULES",
+    candidatesEmpty: "No candidate rules yet.",
     evaluation:
-      "Complete synthetic evaluation matrix",
+      "Synthetic cases evaluated",
     changed: "Decisions changed",
-    aligned: "Aligned with reference",
+    aligned: "Changed as intended",
     counterexamples: "Counterexamples",
-    reviews: "Human reviews transitioned",
-    selected: "Selected patch",
+    reviews: "Human reviews avoided",
+    selected: "Selected rule",
     noCounterexamples:
-      "No counterexamples found in this synthetic evaluation matrix.",
+      "No unintended decisions were found in this synthetic evaluation set.",
     webmcp: "WebMCP",
-    available: "inspect_workspace is available to the agent",
+    available: "Agent tools are available",
     unavailable:
-      "Open in a WebMCP-enabled browser to expose agent tools."
+      "Use a WebMCP-enabled browser to make agent tools available."
   },
+
   ja: {
-    title: "一件の修正が、次の多くの判断を変える。",
+    title:
+      "一件の修正を、そのまま次のルールにしない。",
     subtitle:
-      "Agentに学ばせる前に、他の何が変わるかを確認する。",
-    input: "入力 / 人の修正",
-    observed: "観測されたケース",
-    agentBefore: "Agentの判断 — 修正前",
-    correction: "あなたの修正",
-    rationale: "判断理由",
-    precedent: "この修正を先行判断として使う",
-    record: "修正を記録",
-    simulate: "候補パッチを生成・シミュレーション",
-    impact: "影響シミュレーション",
+      "AI Agentに覚えさせる前に、他のどのケースまで判断が変わるか、意図しない判断がどこに生まれるかを確認します。",
+    input: "人の修正",
+    observed: "今回のケース",
+    agentBefore: "AI Agentの元の判断",
+    correction: "人の判断",
+    rationale: "修正理由",
+    precedent:
+      "この修正を、候補ルール作成に使う",
+    record: "この修正を記録",
+    simulate:
+      "候補ルールを作って影響を確認",
+    impact: "他のケースへの影響",
     impactEmpty:
-      "まだ一般化されたルールはありません。修正を記録し、候補パッチをシミュレーションしてください。",
-    candidates: "候補パッチ",
-    candidatesEmpty: "まだ候補は生成されていません。",
+      "この修正は、まだ他のケースには適用されていません。",
+    candidates: "候補ルール",
+    candidatesEmpty:
+      "まだ候補ルールは作られていません。",
     evaluation:
-      "合成データによる全組合せ評価",
-    changed: "判断が変わる組合せ",
-    aligned: "参照判断と一致",
-    counterexamples: "反例",
-    reviews: "人レビューから移る判断",
-    selected: "選択中のパッチ",
+      "デモ用ケースを検証",
+    changed:
+      "判断が変わるケース",
+    aligned:
+      "意図どおり変わるケース",
+    counterexamples:
+      "意図と異なるケース",
+    reviews:
+      "人の確認が不要になるケース",
+    selected:
+      "選択中のルール",
     noCounterexamples:
-      "この合成評価マトリクスでは反例は見つかりませんでした。",
+      "この適用範囲では、意図と異なる判断は見つかりませんでした。",
     webmcp: "WebMCP",
-    available: "inspect_workspace をAgentが利用できます",
+    available:
+      "Agentが操作できます",
     unavailable:
-      "WebMCP対応ブラウザで開くとAgent用ツールが公開されます。"
+      "WebMCP対応ブラウザでAgent操作を利用できます。"
   }
 } as const;
-

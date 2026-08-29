@@ -50,25 +50,25 @@ interface ActivityEvent {
 }
 
 const DECISION_JA: Record<Decision, string> = {
-  APPROVE: "承認",
-  HUMAN_REVIEW: "人による確認",
-  DECLINE: "見送り"
+  APPROVE: "承認する",
+  HUMAN_REVIEW: "人の確認が必要",
+  DECLINE: "承認しない"
 };
 
 const LEVEL_JA: Record<string, string> = {
   LOW: "低",
   MEDIUM: "中",
   HIGH: "高",
-  WEAK: "弱い",
-  PARTIAL: "一部",
+  WEAK: "不十分",
+  PARTIAL: "一部確認済み",
   STRONG: "十分",
   ANY: "指定なし"
 };
 
 const SCOPE_JA: Record<DecisionPatch["scope"], string> = {
-  NARROW: "狭く適用",
+  NARROW: "限定",
   BALANCED: "バランス",
-  BROAD: "広く適用"
+  BROAD: "広範囲"
 };
 
 export default function App() {
@@ -608,7 +608,7 @@ export default function App() {
       lang === "ja" &&
       value === "Critical support request"
     ) {
-      return "重要支援の申請";
+      return "緊急支援の申請";
     }
 
     return value;
@@ -621,7 +621,7 @@ export default function App() {
     lang === "ja" &&
     workspace.humanCorrection.rationale ===
       initialRationale
-      ? "緊急度と脆弱性が高く、この判断を支える十分な根拠があるため。"
+      ? "緊急性が高く、特別な配慮が必要なケースであり、承認を支える根拠も確認できているため。"
       : workspace.humanCorrection.rationale;
 
   const selectedPatch =
@@ -707,15 +707,15 @@ export default function App() {
           : "Urgency ≥",
       evidenceAtLeast:
         lang === "ja"
-          ? "根拠 ≥"
+          ? "根拠の確かさ ≥"
           : "Evidence ≥",
       vulnerabilityAtLeast:
         lang === "ja"
-          ? "脆弱性 ≥"
+          ? "配慮の必要性 ≥"
           : "Vulnerability ≥",
       potentialHarmAtMost:
         lang === "ja"
-          ? "潜在的損害 ≤"
+          ? "誤判断時の影響 ≤"
           : "Potential harm ≤",
       continuityAtLeast:
         lang === "ja"
@@ -940,7 +940,7 @@ export default function App() {
   );
 
   return (
-    <div className="app">
+    <div className={`app lang-${lang}`}>
       <header className="topbar">
         <div className="brand">SOLIFAN</div>
         <div className="divider" />
@@ -1022,7 +1022,7 @@ export default function App() {
               <div>
                 <dt>
                   {lang === "ja"
-                    ? "根拠"
+                    ? "根拠の確かさ"
                     : "Evidence"}
                 </dt>
                 <dd>
@@ -1034,7 +1034,7 @@ export default function App() {
               <div>
                 <dt>
                   {lang === "ja"
-                    ? "潜在的損害"
+                    ? "誤判断した場合の影響"
                     : "Potential harm"}
                 </dt>
                 <dd>
@@ -1046,7 +1046,7 @@ export default function App() {
               <div>
                 <dt>
                   {lang === "ja"
-                    ? "脆弱性"
+                    ? "配慮の必要性"
                     : "Vulnerability"}
                 </dt>
                 <dd>
@@ -1178,19 +1178,19 @@ export default function App() {
                 <div className="emptyExperienceLead">
                   <span className="eyebrow">
                     {lang === "ja"
-                      ? "まだ公開ルールではありません"
+                      ? "まだルールにはしていません"
                       : "NOT A RULE YET"}
                   </span>
 
                   <h2>
                     {lang === "ja"
-                      ? "今は、まだ一件の人の判断です。"
+                      ? "まず、この一件だけを人の判断として記録します。"
                       : "For now, this is only one human decision."}
                   </h2>
 
                   <p>
                     {lang === "ja"
-                      ? "この修正を一般化する前に、どの判断まで変わり、どこに反例が生まれるかを確かめます。"
+                      ? "記録した修正からAI Agentが候補ルールを作り、他のケースへの影響と意図しない判断を検証します。人が公開を許可するまで、ルールは変わりません。"
                       : "Before generalizing it, Decision Patch shows which other decisions would move—and where counterexamples appear."}
                   </p>
                 </div>
@@ -1200,12 +1200,12 @@ export default function App() {
                     <span>01</span>
                     <strong>
                       {lang === "ja"
-                        ? "人が一件を修正"
+                        ? "人が修正を記録"
                         : "Human corrects"}
                     </strong>
                     <small>
                       {lang === "ja"
-                        ? "判断と理由を残す"
+                        ? "何を、なぜ変えたかを残す"
                         : "One decision + rationale"}
                     </small>
                   </div>
@@ -1214,12 +1214,12 @@ export default function App() {
                     <span>02</span>
                     <strong>
                       {lang === "ja"
-                        ? "Agentが境界を提案"
+                        ? "Agentが候補ルールを作る"
                         : "Agent proposes"}
                     </strong>
                     <small>
                       {lang === "ja"
-                        ? "適用範囲を複数案にする"
+                        ? "適用範囲の異なる案を比較する"
                         : "Candidate boundaries"}
                     </small>
                   </div>
@@ -1228,12 +1228,12 @@ export default function App() {
                     <span>03</span>
                     <strong>
                       {lang === "ja"
-                        ? "影響と反例を再生"
+                        ? "他のケースへの影響を検証"
                         : "Replay impact"}
                     </strong>
                     <small>
                       {lang === "ja"
-                        ? "変わる判断を先に見る"
+                        ? "変わる判断と要注意ケースを先に見る"
                         : "Changes + counterexamples"}
                     </small>
                   </div>
@@ -1242,12 +1242,12 @@ export default function App() {
                     <span>04</span>
                     <strong>
                       {lang === "ja"
-                        ? "人が公開を解放"
+                        ? "人が公開を許可"
                         : "Human unlocks publish"}
                     </strong>
                     <small>
                       {lang === "ja"
-                        ? "明示承認まで公開しない"
+                        ? "承認した候補ルールだけ公開できる"
                         : "Nothing publishes before approval"}
                     </small>
                   </div>
@@ -1280,7 +1280,7 @@ export default function App() {
 
                   <div className="honesty">
                     {lang === "ja"
-                      ? "ここで記録されたのは一件の修正だけです。一般化されたルールはまだ公開されていません。"
+                      ? "ここでは一件の修正を記録しただけです。まだ他のケースには適用されません。"
                       : "Observed correction only. No generalized rule has been published."}
                   </div>
                 </div>
@@ -1292,13 +1292,13 @@ export default function App() {
                   <div>
                     <span className="eyebrow">
                       {lang === "ja"
-                        ? "人が直接調整"
+                        ? "人が適用範囲を調整"
                         : "HUMAN EDIT"}
                     </span>
 
                     <strong>
                       {lang === "ja"
-                        ? "一般化する範囲を調整"
+                        ? "候補ルールの条件を調整"
                         : "Adjust the generalization boundary"}
                     </strong>
                   </div>
@@ -1311,8 +1311,12 @@ export default function App() {
                     }`}
                   >
                     {selectedSimulation
-                      ? "SIMULATION CURRENT"
-                      : "REPLAY REQUIRED"}
+                      ? lang === "ja"
+                        ? "検証結果は最新"
+                        : "SIMULATION CURRENT"
+                      : lang === "ja"
+                        ? "再検証が必要"
+                        : "REPLAY REQUIRED"}
                   </span>
                 </div>
 
@@ -1346,7 +1350,7 @@ export default function App() {
                   <label>
                     <span>
                       {lang === "ja"
-                        ? "根拠"
+                        ? "根拠の確かさ"
                         : "Evidence"}
                     </span>
                     <select
@@ -1382,7 +1386,7 @@ export default function App() {
                   <label>
                     <span>
                       {lang === "ja"
-                        ? "脆弱性"
+                        ? "配慮の必要性"
                         : "Vulnerability"}
                     </span>
                     <select
@@ -1409,7 +1413,7 @@ export default function App() {
                   <label>
                     <span>
                       {lang === "ja"
-                        ? "潜在的損害"
+                        ? "誤判断した場合の影響"
                         : "Potential harm"}
                     </span>
                     <select
@@ -1464,7 +1468,7 @@ export default function App() {
                   <div className="humanEditNote">
                     <strong>
                       {lang === "ja"
-                        ? "人の変更"
+                        ? "人が変更した条件"
                         : "Human changed"}
                     </strong>
 
@@ -1475,7 +1479,7 @@ export default function App() {
                     {!selectedSimulation && (
                       <small>
                         {lang === "ja"
-                          ? "以前のシミュレーションは失効しました。Agentはこの最新状態を読み、再評価できます。"
+                          ? "条件が変わったため、前の検証結果は破棄しました。Agentは最新の条件を読み直して再検証できます。"
                           : "The prior simulation was invalidated. The agent can inspect this latest state and re-simulate it."}
                       </small>
                     )}
@@ -1490,12 +1494,12 @@ export default function App() {
                 <div className="staleState">
                   <strong>
                     {lang === "ja"
-                      ? "再シミュレーションが必要です"
+                      ? "新しい条件で再検証してください"
                       : "Re-simulation required"}
                   </strong>
                   <span>
                     {lang === "ja"
-                      ? "人が一般化条件を変更したため、以前の結果は意図的に非表示にしています。"
+                      ? "候補ルールの条件が変わったため、前の検証結果は表示していません。"
                       : "The human changed the generalization boundary, so the previous result is intentionally hidden."}
                   </span>
                 </div>
@@ -1575,7 +1579,7 @@ export default function App() {
                       <div className="deltaIntro">
                         <span className="eyebrow">
                           {lang === "ja"
-                            ? "人の変更による差分"
+                            ? "条件変更で何が変わったか"
                             : "WHAT YOUR EDIT CHANGED"}
                         </span>
 
@@ -1588,7 +1592,7 @@ export default function App() {
                         <div>
                           <span>
                             {lang === "ja"
-                              ? "影響する判断"
+                              ? "判断が変わるケース"
                               : "Affected decisions"}
                           </span>
                           <strong>
@@ -1601,7 +1605,7 @@ export default function App() {
                         <div>
                           <span>
                             {lang === "ja"
-                              ? "参照判断との一致"
+                              ? "意図どおり変わるケース"
                               : "Reference aligned"}
                           </span>
                           <strong>
@@ -1621,7 +1625,7 @@ export default function App() {
                         >
                           <span>
                             {lang === "ja"
-                              ? "新たな反例"
+                              ? "新たな要注意ケース"
                               : "Counterexamples"}
                           </span>
                           <strong>
@@ -1634,7 +1638,7 @@ export default function App() {
                         <div>
                           <span>
                             {lang === "ja"
-                              ? "人レビューから移る判断"
+                              ? "人の確認が不要になるケース"
                               : "Reviews transitioned"}
                           </span>
                           <strong>
@@ -1685,13 +1689,17 @@ export default function App() {
                             <div>
                               <span>
                                 {
-                                  item.baselineDecision
+                                  displayDecision(
+                                    item.baselineDecision
+                                  )
                                 }
                               </span>
                               <span>→</span>
                               <strong>
                                 {
-                                  selectedPatch.outcome
+                                  displayDecision(
+                                    selectedPatch.outcome
+                                  )
                                 }
                               </strong>
                             </div>
@@ -1740,10 +1748,10 @@ export default function App() {
                         {readyPatchId ===
                         selectedPatch.id
                           ? lang === "ja"
-                            ? "✓ 公開準備完了 — 6番目のToolを解放"
+                            ? "✓ 公開準備完了 — Agentに公開操作を開放"
                             : "✓ Ready — publish tool unlocked"
                           : lang === "ja"
-                            ? "このパッチを公開準備完了にする"
+                            ? "この候補ルールを公開準備完了にする"
                             : "Mark this patch ready"}
                       </button>
                     )}
@@ -1891,7 +1899,7 @@ export default function App() {
             <div>
               <strong>
                 {lang === "ja"
-                  ? "Agentが使えるTool"
+                  ? "WebMCP / Agentが使える操作"
                   : "Agent surface"}
               </strong>
 
@@ -1905,7 +1913,9 @@ export default function App() {
                 {webmcpToolCount > 0
                   ? `${webmcpToolCount +
                       (publishToolAvailable ? 1 : 0)} LIVE`
-                  : "NOT DETECTED"}
+                  : lang === "ja"
+                    ? "対応ブラウザで利用可能"
+                    : "BROWSER SUPPORT REQUIRED"}
               </span>
             </div>
 
@@ -1913,10 +1923,10 @@ export default function App() {
               {webmcpToolCount > 0
                 ? publishToolAvailable
                   ? lang === "ja"
-                    ? "人の明示承認を検知しました。公開ToolがAgentに追加されています。"
+                    ? "人が公開を許可しました。6つ目の「公開」操作がAgentに追加されています。"
                     : "Human approval detected. The publish tool is now exposed to the agent."
                   : lang === "ja"
-                    ? "Agentは確認・候補生成・シミュレーション・比較・修正が可能です。公開だけは、人が準備完了にするまで使えません。"
+                    ? "通常は、確認・候補作成・検証・比較・修正の5つの操作をAgentに公開します。公開操作だけは、人が選んだ候補ルールを「公開準備完了」にした時に6つ目として追加されます。"
                     : "The agent can inspect, draft, simulate, compare, and revise. Publish stays unavailable until a human marks one patch ready."
                 : t.unavailable}
             </p>
@@ -1926,7 +1936,7 @@ export default function App() {
                 <div>
                   <span>
                     {lang === "ja"
-                      ? "通常"
+                      ? "通常時"
                       : "CURRENT"}
                   </span>
                   <strong>
@@ -1951,7 +1961,7 @@ export default function App() {
                         ? "人の承認後"
                         : "HUMAN READY"
                       : lang === "ja"
-                        ? "人の承認で解放"
+                        ? "人が許可すると"
                         : "ON HUMAN READY"}
                   </span>
                   <strong>
@@ -1968,9 +1978,9 @@ export default function App() {
         <div className="lime">
           {lang === "ja" ? (
             <>
-              一つの修正を、一つの学びに。
+              一つの修正から、
               <br />
-              次の判断を、より良いものに。
+              より良い次の判断へ。
             </>
           ) : (
             <>
@@ -1998,6 +2008,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

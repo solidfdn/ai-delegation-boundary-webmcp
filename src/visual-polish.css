@@ -1481,3 +1481,291 @@ textarea:focus-visible {
     margin-left: 0;
   }
 }
+
+/* ==========================================================
+   READABILITY PASS
+   The interface must remain readable without zooming.
+   ========================================================== */
+
+.tagline {
+  font-size: 12px;
+}
+
+.resetButton,
+.language button {
+  font-size: 11px;
+}
+
+.sectionLabel {
+  font-size: 11px;
+}
+
+.cardTitle {
+  font-size: 11px;
+}
+
+.facts dt {
+  font-size: 11px;
+}
+
+.facts dd {
+  font-size: 12px;
+}
+
+.correctionCard label,
+.checkboxRow {
+  font-size: 11px !important;
+}
+
+select,
+textarea {
+  font-size: 13px;
+}
+
+.primary,
+.secondaryAction,
+.readyAction {
+  font-size: 12px;
+}
+
+.hero p {
+  max-width: 760px;
+  font-size: 14px;
+}
+
+.eyebrow {
+  font-size: 10px;
+}
+
+.emptyExperienceLead p {
+  font-size: 13px;
+}
+
+.flowStep > span {
+  font-size: 9px;
+}
+
+.flowStep strong {
+  max-width: 175px;
+  font-size: 18px;
+}
+
+.flowStep small {
+  max-width: 175px;
+  font-size: 11px;
+}
+
+.editorGrid label > span {
+  font-size: 10px;
+}
+
+.editorGrid select {
+  font-size: 12px;
+}
+
+.humanEditNote strong {
+  font-size: 10px;
+}
+
+.humanEditNote span {
+  font-size: 12px;
+}
+
+.humanEditNote small {
+  font-size: 11px;
+}
+
+.staleState span,
+.matrixNote,
+.honesty {
+  font-size: 11px;
+}
+
+.metricsGrid span,
+.deltaMetrics span {
+  font-size: 10px;
+}
+
+.counterexampleArea > p {
+  font-size: 12px;
+}
+
+.counterexample span,
+.counterexample small,
+.counterexample strong {
+  font-size: 10px;
+}
+
+.patchHeader span {
+  font-size: 10px;
+}
+
+.conditions span {
+  font-size: 9px;
+}
+
+.patchOutcome {
+  font-size: 11px;
+}
+
+.patchBadge,
+.status {
+  font-size: 9px;
+}
+
+.webmcpCard strong {
+  font-size: 19px;
+}
+
+.webmcpCard p {
+  font-size: 12px;
+}
+
+.toolGate span {
+  font-size: 9px;
+}
+
+.toolGate strong {
+  font-size: 13px;
+}
+
+.activityHeader > span:last-child {
+  font-size: 10px;
+}
+
+.activityRow p {
+  font-size: 11px;
+}
+
+.activityActor {
+  font-size: 9px;
+}
+
+footer .navy {
+  font-size: 10px;
+}
+
+/* Japanese typography needs less visual contrast
+   between hero and supporting copy. */
+.lang-ja .hero h1 {
+  max-width: 900px;
+  font-size: clamp(42px, 3.25vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.lang-ja .hero p {
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+/* Non-WebMCP browser is not an error state. */
+.status.unavailable {
+  color: var(--dp-muted);
+}
+
+/* ── Mobile readability ───────────────────────────────── */
+
+@media (max-width: 760px) {
+  .sectionLabel,
+  .cardTitle {
+    font-size: 11px;
+  }
+
+  .facts dt,
+  .facts dd {
+    font-size: 12px;
+  }
+
+  .correctionCard label,
+  .checkboxRow {
+    font-size: 12px !important;
+  }
+
+  select,
+  textarea,
+  .primary,
+  .secondaryAction,
+  .readyAction {
+    font-size: 14px;
+  }
+
+  .lang-ja .hero h1 {
+    font-size: clamp(34px, 9.2vw, 40px);
+    line-height: 1.12;
+  }
+
+  .hero p,
+  .lang-ja .hero p {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .emptyExperienceLead h2 {
+    font-size: 26px;
+    line-height: 1.25;
+  }
+
+  .emptyExperienceLead p {
+    font-size: 13px;
+  }
+
+  .flowStep > span {
+    font-size: 10px;
+  }
+
+  .flowStep strong {
+    font-size: 17px;
+  }
+
+  .flowStep small {
+    font-size: 12px;
+  }
+
+  .editorGrid label > span {
+    font-size: 11px;
+  }
+
+  .editorGrid select {
+    font-size: 14px;
+  }
+
+  .metricsGrid span,
+  .deltaMetrics span {
+    font-size: 11px;
+  }
+
+  .counterexample span,
+  .counterexample small,
+  .counterexample strong {
+    font-size: 11px;
+  }
+
+  .conditions span {
+    font-size: 10px;
+  }
+
+  .patchOutcome {
+    font-size: 12px;
+  }
+
+  .webmcpCard p {
+    font-size: 12px;
+  }
+
+  .toolGate span {
+    font-size: 10px;
+  }
+
+  .toolGate strong {
+    font-size: 13px;
+  }
+
+  .activityRow p {
+    font-size: 12px;
+  }
+
+  footer .navy {
+    font-size: 10px;
+  }
+}
