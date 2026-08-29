@@ -10,6 +10,8 @@ import { initialWorkspace } from "./domains/universal-demo";
 import type {
   Decision,
   DecisionPatch,
+  EvidenceLevel,
+  Level,
   PatchConditions,
   PatchSimulation,
   WorkspaceState
@@ -29,6 +31,13 @@ import {
 
 import { copy } from "./i18n/copy";
 import "./styles.css";
+
+const LEVELS: Level[] = ["LOW", "MEDIUM", "HIGH"];
+const EVIDENCE_LEVELS: EvidenceLevel[] = [
+  "WEAK",
+  "PARTIAL",
+  "STRONG"
+];
 
 export default function App() {
   const [lang, setLang] = useState<"en" | "ja">("en");
@@ -57,6 +66,9 @@ export default function App() {
   const [selectedPatchId, setSelectedPatchId] =
     useState<string | null>(null);
 
+  const [lastHumanEdit, setLastHumanEdit] =
+    useState<string | null>(null);
+
   const evaluationSet = useMemo(
     () => generateEvaluationSet(),
     []
@@ -68,6 +80,7 @@ export default function App() {
   const selectedPatchIdRef = useRef(selectedPatchId);
   const readyPatchIdRef = useRef(readyPatchId);
   const publishedPatchIdRef = useRef(publishedPatchId);
+  const lastHumanEditRef = useRef(lastHumanEdit);
 
   workspaceRef.current = workspace;
   patchesRef.current = patches;
@@ -75,6 +88,7 @@ export default function App() {
   selectedPatchIdRef.current = selectedPatchId;
   readyPatchIdRef.current = readyPatchId;
   publishedPatchIdRef.current = publishedPatchId;
+  lastHumanEditRef.current = lastHumanEdit;
 
   const replacePatches = (next: DecisionPatch[]) => {
     patchesRef.current = next;
@@ -101,6 +115,11 @@ export default function App() {
   const markPublished = (patchId: string | null) => {
     publishedPatchIdRef.current = patchId;
     setPublishedPatchId(patchId);
+  };
+
+  const noteHumanEdit = (message: string | null) => {
+    lastHumanEditRef.current = message;
+    setLastHumanEdit(message);
   };
 
   const summarizePatch = (patch: DecisionPatch) => ({
@@ -159,7 +178,9 @@ export default function App() {
         ready_patch_id:
           readyPatchIdRef.current,
         published_patch_id:
-          publishedPatchIdRef.current
+          publishedPatchIdRef.current,
+        last_human_edit:
+          lastHumanEditRef.current
       },
       note:
         "Synthetic demonstration environment. No candidate patch is published by these tools."
@@ -183,6 +204,7 @@ export default function App() {
       replaceSimulations({});
       markReady(null);
       markPublished(null);
+      noteHumanEdit(null);
 
       const balanced =
         next.find(
@@ -230,6 +252,8 @@ export default function App() {
         status: "success",
         patch: summarizePatch(patch),
         simulation: summarizeSimulation(result),
+        human_edit_context:
+          lastHumanEditRef.current,
         note:
           "Results are deterministic counts over the complete synthetic combination matrix, not estimates of real-world frequency or business impact."
       };
@@ -475,6 +499,7 @@ export default function App() {
     selectPatch(null);
     markReady(null);
     markPublished(null);
+    noteHumanEdit(null);
   };
 
   const runSimulation = () => {
@@ -534,6 +559,119 @@ export default function App() {
 
     return `${labels[key] ?? key} ${value}`;
   };
+
+  const updateSelectedCondition = (
+    key: keyof PatchConditions,
+    value: string
+  ) => {
+    if (
+      !selectedPatch ||
+      publishedPatchId === selectedPatch.id
+    ) {
+      return;
+    }
+
+    const conditions: PatchConditions = {
+      ...selectedPatch.conditions
+    };
+
+    const before =
+      conditions[key] ?? "ANY";
+
+    switch (key) {
+      case "urgencyAtLeast":
+        if (value) {
+          conditions.urgencyAtLeast =
+            value as Level;
+        } else {
+          delete conditions.urgencyAtLeast;
+        }
+        break;
+
+      case "evidenceAtLeast":
+        if (value) {
+          conditions.evidenceAtLeast =
+            value as EvidenceLevel;
+        } else {
+          delete conditions.evidenceAtLeast;
+        }
+        break;
+
+      case "vulnerabilityAtLeast":
+        if (value) {
+          conditions.vulnerabilityAtLeast =
+            value as Level;
+        } else {
+          delete conditions.vulnerabilityAtLeast;
+        }
+        break;
+
+      case "potentialHarmAtMost":
+        if (value) {
+          conditions.potentialHarmAtMost =
+            value as Level;
+        } else {
+          delete conditions.potentialHarmAtMost;
+        }
+        break;
+
+      case "continuityAtLeast":
+        if (value) {
+          conditions.continuityAtLeast =
+            value as Level;
+        } else {
+          delete conditions.continuityAtLeast;
+        }
+        break;
+    }
+
+    const revised: DecisionPatch = {
+      ...selectedPatch,
+      conditions
+    };
+
+    replacePatches(
+      patchesRef.current.map((patch) =>
+        patch.id === revised.id
+          ? revised
+          : patch
+      )
+    );
+
+    const nextSimulations = {
+      ...simulationsRef.current
+    };
+
+    delete nextSimulations[revised.id];
+    replaceSimulations(nextSimulations);
+
+    if (
+      readyPatchIdRef.current === revised.id
+    ) {
+      markReady(null);
+    }
+
+    const label =
+      formatCondition(key, "")
+        .trim();
+
+    noteHumanEdit(
+      `${label}: ${String(before)} → ${
+        value || "ANY"
+      }`
+    );
+  };
+
+  const renderLevelOptions = () => (
+    <>
+      <option value="">ANY</option>
+      {LEVELS.map((level) => (
+        <option key={level} value={level}>
+          {level}
+        </option>
+      ))}
+    </>
+  );
 
   return (
     <div className="app">
@@ -721,7 +859,7 @@ export default function App() {
             )}
 
             {workspace.precedentRecorded &&
-              !selectedSimulation && (
+              patches.length === 0 && (
                 <div className="precedentState">
                   <div className="shift">
                     <span>
@@ -753,6 +891,220 @@ export default function App() {
                 </div>
               )}
 
+            {selectedPatch && (
+              <div className="boundaryEditor">
+                <div className="editorHeader">
+                  <div>
+                    <span className="eyebrow">
+                      {lang === "ja"
+                        ? "人が直接調整"
+                        : "HUMAN EDIT"}
+                    </span>
+
+                    <strong>
+                      {lang === "ja"
+                        ? "一般化する範囲を調整"
+                        : "Adjust the generalization boundary"}
+                    </strong>
+                  </div>
+
+                  <span
+                    className={`simulationStatus ${
+                      selectedSimulation
+                        ? "current"
+                        : "stale"
+                    }`}
+                  >
+                    {selectedSimulation
+                      ? "SIMULATION CURRENT"
+                      : "REPLAY REQUIRED"}
+                  </span>
+                </div>
+
+                <div className="editorGrid">
+                  <label>
+                    <span>
+                      {lang === "ja"
+                        ? "緊急度"
+                        : "Urgency"}
+                    </span>
+                    <select
+                      value={
+                        selectedPatch.conditions
+                          .urgencyAtLeast ?? ""
+                      }
+                      disabled={
+                        publishedPatchId ===
+                        selectedPatch.id
+                      }
+                      onChange={(e) =>
+                        updateSelectedCondition(
+                          "urgencyAtLeast",
+                          e.target.value
+                        )
+                      }
+                    >
+                      {renderLevelOptions()}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>
+                      {lang === "ja"
+                        ? "根拠"
+                        : "Evidence"}
+                    </span>
+                    <select
+                      value={
+                        selectedPatch.conditions
+                          .evidenceAtLeast ?? ""
+                      }
+                      disabled={
+                        publishedPatchId ===
+                        selectedPatch.id
+                      }
+                      onChange={(e) =>
+                        updateSelectedCondition(
+                          "evidenceAtLeast",
+                          e.target.value
+                        )
+                      }
+                    >
+                      <option value="">ANY</option>
+                      {EVIDENCE_LEVELS.map(
+                        (level) => (
+                          <option
+                            key={level}
+                            value={level}
+                          >
+                            {level}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>
+                      {lang === "ja"
+                        ? "脆弱性"
+                        : "Vulnerability"}
+                    </span>
+                    <select
+                      value={
+                        selectedPatch.conditions
+                          .vulnerabilityAtLeast ??
+                        ""
+                      }
+                      disabled={
+                        publishedPatchId ===
+                        selectedPatch.id
+                      }
+                      onChange={(e) =>
+                        updateSelectedCondition(
+                          "vulnerabilityAtLeast",
+                          e.target.value
+                        )
+                      }
+                    >
+                      {renderLevelOptions()}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>
+                      {lang === "ja"
+                        ? "潜在的損害"
+                        : "Potential harm"}
+                    </span>
+                    <select
+                      value={
+                        selectedPatch.conditions
+                          .potentialHarmAtMost ??
+                        ""
+                      }
+                      disabled={
+                        publishedPatchId ===
+                        selectedPatch.id
+                      }
+                      onChange={(e) =>
+                        updateSelectedCondition(
+                          "potentialHarmAtMost",
+                          e.target.value
+                        )
+                      }
+                    >
+                      {renderLevelOptions()}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>
+                      {lang === "ja"
+                        ? "継続影響"
+                        : "Continuity impact"}
+                    </span>
+                    <select
+                      value={
+                        selectedPatch.conditions
+                          .continuityAtLeast ?? ""
+                      }
+                      disabled={
+                        publishedPatchId ===
+                        selectedPatch.id
+                      }
+                      onChange={(e) =>
+                        updateSelectedCondition(
+                          "continuityAtLeast",
+                          e.target.value
+                        )
+                      }
+                    >
+                      {renderLevelOptions()}
+                    </select>
+                  </label>
+                </div>
+
+                {lastHumanEdit && (
+                  <div className="humanEditNote">
+                    <strong>
+                      {lang === "ja"
+                        ? "人の変更"
+                        : "Human changed"}
+                    </strong>
+
+                    <span>
+                      {lastHumanEdit}
+                    </span>
+
+                    {!selectedSimulation && (
+                      <small>
+                        {lang === "ja"
+                          ? "以前のシミュレーションは失効しました。Agentはこの最新状態を読み、再評価できます。"
+                          : "The prior simulation was invalidated. The agent can inspect this latest state and re-simulate it."}
+                      </small>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedPatch &&
+              !selectedSimulation &&
+              patches.length > 0 && (
+                <div className="staleState">
+                  <strong>
+                    {lang === "ja"
+                      ? "再シミュレーションが必要です"
+                      : "Re-simulation required"}
+                  </strong>
+                  <span>
+                    {lang === "ja"
+                      ? "人が一般化条件を変更したため、以前の結果は意図的に非表示にしています。"
+                      : "The human changed the generalization boundary, so the previous result is intentionally hidden."}
+                  </span>
+                </div>
+              )}
             {selectedPatch &&
               selectedSimulation && (
                 <div className="simulation">
@@ -1054,4 +1406,5 @@ export default function App() {
     </div>
   );
 }
+
 
