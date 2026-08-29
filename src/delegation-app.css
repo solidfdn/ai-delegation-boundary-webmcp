@@ -1659,3 +1659,52 @@ select:focus-visible {
 .adb-lang {
   display: none;
 }
+
+ /* HUMAN DECISION PANEL */
+.adb-challenge.open {
+  border: 1px solid var(--ink);
+  padding: 18px;
+}
+
+.adb-challenge-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 2px solid var(--ink);
+}
+
+.adb-challenge-actions::before {
+  content: "HUMAN DECISION REQUIRED — Choose one outcome";
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.adb-challenge-actions button {
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.adb-challenge-actions button:hover,
+.adb-challenge-actions button:focus-visible {
+  background: var(--ink);
+  color: #fff;
+}
+
+@media (max-width: 700px) {
+  .adb-challenge-actions {
+    grid-template-columns: 1fr;
+  }
+}
