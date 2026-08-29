@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   font-family:
     Inter,
     "Noto Sans JP",
@@ -1369,5 +1369,288 @@ select:focus-visible {
 ) {
   * {
     scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================
+   P3.5B — Human-owned task scope + collaboration protocol
+   ========================================================== */
+
+.adb-protocol {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  border-bottom:
+    1px solid var(--line);
+
+  background: #fbfbfb;
+}
+
+.adb-protocol-step {
+  display: grid;
+  gap: 4px;
+
+  min-height: 64px;
+
+  padding:
+    13px
+    clamp(18px, 2.4vw, 34px);
+}
+
+.adb-protocol-step +
+.adb-protocol-step {
+  border-left:
+    1px solid var(--line);
+}
+
+.adb-protocol-step span {
+  color: var(--muted);
+
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .1em;
+}
+
+.adb-protocol-step strong {
+  font-family:
+    Georgia,
+    "Yu Mincho",
+    serif;
+
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.adb-task-card.is-setup {
+  border-color: var(--ink);
+}
+
+.adb-task-form {
+  display: grid;
+  gap: 13px;
+
+  margin-top: 14px;
+}
+
+.adb-task-field {
+  display: grid;
+  gap: 6px;
+}
+
+.adb-task-field label {
+  color: var(--ink);
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.adb-task-field input,
+.adb-task-field textarea {
+  width: 100%;
+
+  border:
+    1px solid var(--line-strong);
+
+  border-radius: 0;
+
+  background: #fff;
+
+  color: var(--ink);
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.adb-task-field input {
+  min-height: 43px;
+  padding: 0 11px;
+}
+
+.adb-task-field textarea {
+  min-height: 92px;
+
+  padding: 10px 11px;
+
+  resize: vertical;
+}
+
+.adb-task-form button {
+  min-height: 44px;
+
+  border:
+    1px solid var(--ink);
+
+  background: var(--ink);
+
+  color: #fff;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.adb-task-form button:disabled {
+  cursor: not-allowed;
+  opacity: .38;
+}
+
+.adb-task-form small {
+  color: var(--muted);
+
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.adb-task-locked-note {
+  margin-top: 13px;
+
+  border-top:
+    1px solid var(--line);
+
+  padding-top: 10px;
+
+  color: var(--muted);
+
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.adb-condition select:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.adb-known-empty {
+  padding: 15px 0 4px;
+
+  border-top:
+    1px solid var(--line);
+}
+
+.adb-known-empty strong {
+  font-family:
+    Georgia,
+    "Yu Mincho",
+    serif;
+
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.adb-known-empty p {
+  margin: 6px 0 0;
+
+  color: var(--muted);
+
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.adb-agent-prompt {
+  display: block;
+
+  margin-top: 13px;
+
+  border-left:
+    3px solid var(--lime);
+
+  padding:
+    10px 11px;
+
+  background: var(--soft);
+
+  color: var(--ink);
+
+  font-family:
+    inherit;
+
+  font-size: 10px;
+  line-height: 1.55;
+
+  white-space: normal;
+}
+
+.adb-gate-value {
+  font-family:
+    inherit !important;
+
+  font-size:
+    clamp(
+      12px,
+      1.2vw,
+      18px
+    ) !important;
+
+  font-weight: 700 !important;
+
+  letter-spacing: .02em;
+}
+
+.adb-check-button:disabled {
+  cursor: not-allowed;
+  opacity: .38;
+}
+
+.adb-task-field input:focus-visible,
+.adb-task-field textarea:focus-visible {
+  outline:
+    2px solid var(--ink);
+
+  outline-offset: 2px;
+}
+
+@media (
+  max-width: 900px
+) {
+  .adb-protocol {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .adb-protocol-step:nth-child(3) {
+    border-left: 0;
+    border-top:
+      1px solid var(--line);
+  }
+
+  .adb-protocol-step:nth-child(4) {
+    border-top:
+      1px solid var(--line);
+  }
+
+  .adb-task-field label {
+    font-size: 12px;
+  }
+
+  .adb-task-field input,
+  .adb-task-field textarea {
+    font-size: 14px;
+  }
+
+  .adb-task-form button {
+    min-height: 46px;
+    font-size: 13px;
+  }
+
+  .adb-agent-prompt {
+    font-size: 11px;
+  }
+}
+
+@media (
+  max-width: 520px
+) {
+  .adb-protocol {
+    grid-template-columns:
+      1fr;
+  }
+
+  .adb-protocol-step +
+  .adb-protocol-step {
+    border-left: 0;
+    border-top:
+      1px solid var(--line);
   }
 }

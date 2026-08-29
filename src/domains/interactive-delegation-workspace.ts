@@ -1,4 +1,4 @@
-﻿import {
+import {
   delegationBoundaryDemoWorkspace
 } from "./delegation-boundary-demo";
 
@@ -34,24 +34,37 @@ createInteractiveDelegationWorkspace():
   }
 
   /*
-   * P1 keeps deterministic fixtures for automated tests.
+   * The public Challenge product begins with the user's
+   * own work, not with a fictional business case.
    *
-   * The public product must not pretend that the current user
-   * already made judgments they never made.
-   *
-   * Known Decisions are earned only through real human
-   * resolutions during this workspace.
+   * Only a human can scope the task.
+   */
+  workspace.task = {
+    title: "",
+    description: undefined
+  };
+
+  /*
+   * No prior human judgment is invented.
+   * Known Decisions are earned only through real
+   * human resolutions in this workspace.
    */
   current.knownDecisions = [];
 
   /*
-   * Agent Challenges are also created live.
-   * A challenge belongs to the exact boundary it tested.
+   * Challenges are generated live against the exact
+   * current boundary.
    */
   current.challenges = [];
 
   current.review = undefined;
   current.status = "DRAFT";
+
+  current.createdBy =
+    "SYSTEM";
+
+  current.changeSummary =
+    "Awaiting human task scope";
 
   return workspace;
 }

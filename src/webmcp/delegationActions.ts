@@ -71,6 +71,25 @@ function clone<T>(value: T): T {
   ) as T;
 }
 
+function taskIsScoped(
+  workspace: DelegationWorkspace
+): boolean {
+  return (
+    workspace.task.title
+      .trim()
+      .length > 0
+  );
+}
+
+function taskScopeRequired() {
+  return {
+    status: "blocked",
+    code: "TASK_SCOPE_REQUIRED",
+    message:
+      "A human must define the work being evaluated before the Agent can change, challenge, or review delegation authority."
+  };
+}
+
 function summarizeRevision(
   revision: DelegationRevision
 ) {
@@ -438,6 +457,18 @@ createDelegationBoundaryToolActions(
         task:
           workspace.task,
 
+        workspace_ready:
+          taskIsScoped(
+            workspace
+          ),
+
+        required_human_action:
+          taskIsScoped(
+            workspace
+          )
+            ? null
+            : "Define the work to evaluate in the page UI. This step is intentionally human-only.",
+
         factors:
           workspace.factors,
 
@@ -500,6 +531,14 @@ createDelegationBoundaryToolActions(
       try {
         const workspace =
           getWorkspace();
+
+        if (
+          !taskIsScoped(
+            workspace
+          )
+        ) {
+          return taskScopeRequired();
+        }
 
         const current =
           getCurrentRevision(
@@ -672,6 +711,14 @@ createDelegationBoundaryToolActions(
         const workspace =
           getWorkspace();
 
+        if (
+          !taskIsScoped(
+            workspace
+          )
+        ) {
+          return taskScopeRequired();
+        }
+
         const scenarioError =
           validateScenario(
             input.scenario,
@@ -792,6 +839,14 @@ createDelegationBoundaryToolActions(
       try {
         const workspace =
           getWorkspace();
+
+        if (
+          !taskIsScoped(
+            workspace
+          )
+        ) {
+          return taskScopeRequired();
+        }
 
         const current =
           getCurrentRevision(

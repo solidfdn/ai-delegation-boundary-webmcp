@@ -1,4 +1,4 @@
-﻿import {
+import {
   describe,
   expect,
   it
@@ -12,7 +12,8 @@ import {
 
 import {
   editBoundaryConditionAsHuman,
-  resolveChallengeAsHuman
+  resolveChallengeAsHuman,
+  scopeDelegationTaskAsHuman
 } from "./delegationHuman";
 
 import {
@@ -347,6 +348,13 @@ describe(
         let workspace =
           createInteractiveDelegationWorkspace();
 
+        workspace =
+          scopeDelegationTaskAsHuman(
+            workspace,
+            "Customer decision review",
+            "Evaluate which routine customer decisions may be completed by an AI agent."
+          );
+
         const actions =
           createDelegationBoundaryToolActions(
             () => workspace,
@@ -407,6 +415,13 @@ describe(
       async () => {
         let workspace =
           createInteractiveDelegationWorkspace();
+
+        workspace =
+          scopeDelegationTaskAsHuman(
+            workspace,
+            "Customer decision review",
+            "Evaluate which routine customer decisions may be completed by an AI agent."
+          );
 
         const actions =
           createDelegationBoundaryToolActions(

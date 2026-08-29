@@ -1,4 +1,4 @@
-﻿import {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -14,7 +14,8 @@ import {
 
 import {
   editBoundaryConditionAsHuman,
-  resolveChallengeAsHuman
+  resolveChallengeAsHuman,
+  scopeDelegationTaskAsHuman
 } from "./core/delegationHuman";
 
 import type {
@@ -276,6 +277,16 @@ export default function DelegationApp() {
   const [message, setMessage] =
     useState<string | null>(null);
 
+  const [
+    taskTitleDraft,
+    setTaskTitleDraft
+  ] = useState("");
+
+  const [
+    taskContextDraft,
+    setTaskContextDraft
+  ] = useState("");
+
   const workspaceRef =
     useRef(workspace);
 
@@ -375,16 +386,27 @@ export default function DelegationApp() {
       current.status
     ];
 
-  const taskTitle =
-    lang === "ja"
-      ? "AIに任せる業務判断の範囲を決める"
-      : workspace.task.title;
+  const taskConfigured =
+    workspace.task.title
+      .trim()
+      .length > 0;
 
-  const taskDescription =
-    lang === "ja"
-      ? "どこまでAIだけで完了させ、どこから人の判断を残すかを検討します。"
-      : workspace.task
-          .description;
+  const challengeGateLabel =
+    !taskConfigured
+      ? lang === "ja"
+        ? "業務未設定"
+        : "WAITING"
+      : current.challenges.length === 0
+        ? lang === "ja"
+          ? "必須"
+          : "REQUIRED"
+        : openChallenges.length > 0
+          ? lang === "ja"
+            ? `${openChallenges.length}件 未判断`
+            : `${openChallenges.length} OPEN`
+          : lang === "ja"
+            ? "完了"
+            : "PASSED";
 
   const factorLabel = (
     factorId: string
@@ -543,6 +565,33 @@ export default function DelegationApp() {
     }
   };
 
+  const scopeTask = () => {
+    try {
+      const next =
+        scopeDelegationTaskAsHuman(
+          workspace,
+          taskTitleDraft,
+          taskContextDraft
+        );
+
+      updateWorkspace(
+        next
+      );
+
+      setMessage(
+        lang === "ja"
+          ? "検討する業務を設定しました。ここからAgentが変更案とChallengeを作れます。"
+          : "The work is scoped. The Agent can now propose and challenge delegation changes."
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : String(error)
+      );
+    }
+  };
+
   const editCondition = (
     ruleId: string,
     factorId: string,
@@ -577,6 +626,8 @@ export default function DelegationApp() {
       cloneWorkspace()
     );
 
+    setTaskTitleDraft("");
+    setTaskContextDraft("");
     setMessage(null);
   };
 
@@ -656,8 +707,8 @@ export default function DelegationApp() {
 
           <p>
             {lang === "ja"
-              ? "AIだけで完了できる条件、人の確認を残す条件、AIに任せない条件を整理します。人が確定した判断は次の変更を守るテストとして残り、承認した版だけが反映できます。"
-              : "Define the delegation boundary, challenge proposed changes, preserve human judgments as regression tests, and apply only the exact revision a human approves."}
+              ? "人が検討する業務と最終判断を持ちます。Agentは委任条件の変更を提案し、その変更が危険になる具体例を探し、Revisionごとに再検証します。反映できるのは、人が承認した正確な版だけです。"
+              : "A human defines the work and retains final authority. The Agent proposes boundary changes, tries to break them with concrete challenges, and re-tests each revision. Only the exact human-approved revision can be applied."}
           </p>
         </div>
 
@@ -704,6 +755,51 @@ export default function DelegationApp() {
         </div>
       </section>
 
+      <section
+        className="adb-protocol"
+        aria-label={
+          lang === "ja"
+            ? "HumanとAgentの検討手順"
+            : "Human and Agent review protocol"
+        }
+      >
+        <div className="adb-protocol-step">
+          <span>01 · HUMAN</span>
+          <strong>
+            {lang === "ja"
+              ? "業務を定める"
+              : "Scope the work"}
+          </strong>
+        </div>
+
+        <div className="adb-protocol-step">
+          <span>02 · AGENT</span>
+          <strong>
+            {lang === "ja"
+              ? "変更案を出し、疑う"
+              : "Propose & challenge"}
+          </strong>
+        </div>
+
+        <div className="adb-protocol-step">
+          <span>03 · HUMAN</span>
+          <strong>
+            {lang === "ja"
+              ? "境界を判断する"
+              : "Decide the boundary"}
+          </strong>
+        </div>
+
+        <div className="adb-protocol-step">
+          <span>04 · AGENT</span>
+          <strong>
+            {lang === "ja"
+              ? "承認された版だけ反映"
+              : "Apply exact approval"}
+          </strong>
+        </div>
+      </section>
+
       {message && (
         <div className="adb-message">
           {message}
@@ -730,20 +826,119 @@ export default function DelegationApp() {
             </div>
           </div>
 
-          <div className="adb-task-card">
+          <div
+            className={`adb-task-card ${
+              taskConfigured
+                ? "is-scoped"
+                : "is-setup"
+            }`}
+          >
             <span className="adb-card-label">
               {lang === "ja"
-                ? "検討テーマ"
-                : "TASK"}
+                ? "検討する業務"
+                : "WORK TO DELEGATE"}
             </span>
 
-            <strong>
-              {taskTitle}
-            </strong>
+            {!taskConfigured ? (
+              <form
+                className="adb-task-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  scopeTask();
+                }}
+              >
+                <div className="adb-task-field">
+                  <label htmlFor="adb-task-title">
+                    {lang === "ja"
+                      ? "どの業務・判断をAIに任せることを検討しますか？"
+                      : "What work or decision are you considering delegating?"}
+                  </label>
 
-            <p>
-              {taskDescription}
-            </p>
+                  <input
+                    id="adb-task-title"
+                    value={taskTitleDraft}
+                    maxLength={180}
+                    autoComplete="off"
+                    placeholder={
+                      lang === "ja"
+                        ? "例：顧客からの返金申請を、人の確認なしで処理する判断"
+                        : "e.g. Decide whether a customer refund can be completed without human review"
+                    }
+                    onChange={(event) =>
+                      setTaskTitleDraft(
+                        event.target.value
+                      )
+                    }
+                  />
+                </div>
+
+                <div className="adb-task-field">
+                  <label htmlFor="adb-task-context">
+                    {lang === "ja"
+                      ? "背景・制約（任意）"
+                      : "Context or constraints (optional)"}
+                  </label>
+
+                  <textarea
+                    id="adb-task-context"
+                    value={taskContextDraft}
+                    maxLength={1000}
+                    rows={4}
+                    placeholder={
+                      lang === "ja"
+                        ? "既存ルール、失敗した場合の影響、必ず人に残したい判断など"
+                        : "Existing policy, consequences of a wrong decision, or anything that must remain under human authority"
+                    }
+                    onChange={(event) =>
+                      setTaskContextDraft(
+                        event.target.value
+                      )
+                    }
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={
+                    taskTitleDraft
+                      .trim()
+                      .length < 3
+                  }
+                >
+                  {lang === "ja"
+                    ? "この業務で検討を開始"
+                    : "Start with this work"}
+                </button>
+
+                <small>
+                  {lang === "ja"
+                    ? "この設定は人だけが行います。業務を定めるまでAgentは委任条件を変更できません。"
+                    : "Human-only step. Until this is set, the Agent cannot change delegation authority."}
+                </small>
+              </form>
+            ) : (
+              <>
+                <strong>
+                  {workspace.task.title}
+                </strong>
+
+                {workspace.task
+                  .description && (
+                  <p>
+                    {
+                      workspace.task
+                        .description
+                    }
+                  </p>
+                )}
+
+                <div className="adb-task-locked-note">
+                  {lang === "ja"
+                    ? "このWorkspaceでは検討対象を固定しています。別の業務を検討する場合はResetします。"
+                    : "Task scope is fixed for this workspace. Reset to evaluate a different task."}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="adb-boundary-summary">
@@ -844,6 +1039,9 @@ export default function DelegationApp() {
                             currentValue !==
                               undefined ? (
                               <select
+                                disabled={
+                                  !taskConfigured
+                                }
                                 value={String(
                                   currentValue
                                 )}
@@ -981,14 +1179,12 @@ export default function DelegationApp() {
             <div>
               <span>
                 {lang === "ja"
-                  ? "人の判断待ち"
-                  : "Open challenges"}
+                  ? "Challenge Gate"
+                  : "Challenge gate"}
               </span>
 
-              <strong>
-                {
-                  openChallenges.length
-                }
+              <strong className="adb-gate-value">
+                {challengeGateLabel}
               </strong>
             </div>
           </div>
@@ -1085,6 +1281,23 @@ export default function DelegationApp() {
                 }
               </span>
             </div>
+
+            {current.knownDecisions
+              .length === 0 && (
+              <div className="adb-known-empty">
+                <strong>
+                  {lang === "ja"
+                    ? "まだ人が確定した判断はありません。"
+                    : "No human judgment has been recorded yet."}
+                </strong>
+
+                <p>
+                  {lang === "ja"
+                    ? "Agent Challengeに人が答えると、その判断が次の変更を守るRegression Testとして残ります。"
+                    : "When a human answers an Agent Challenge, that judgment becomes a regression test for future boundary changes."}
+                </p>
+              </div>
+            )}
 
             {current.knownDecisions
               .slice(-5)
@@ -1184,16 +1397,32 @@ export default function DelegationApp() {
             0 ? (
               <div className="adb-empty-challenge">
                 <strong>
-                  {lang === "ja"
-                    ? "まだ論点は提示されていません。"
-                    : "No challenge has been raised yet."}
+                  {!taskConfigured
+                    ? lang === "ja"
+                      ? "まず、検討する業務を人が定めます。"
+                      : "First, a human must scope the work."
+                    : lang === "ja"
+                      ? "Agent Challengeが必要です。"
+                      : "Agent Challenge required."}
                 </strong>
 
                 <p>
-                  {lang === "ja"
-                    ? "Boundaryを変更したら、Agentに「この変更が危険になる条件を探して」と依頼します。"
-                    : "After changing the boundary, ask the agent to find a scenario that could make the change unsafe or over-broad."}
+                  {!taskConfigured
+                    ? lang === "ja"
+                      ? "業務が決まるまで、Agentによる委任条件の変更・Challenge・Reviewはロックされています。"
+                      : "Until the work is scoped, Agent tools that change, challenge, or review authority are locked."
+                    : lang === "ja"
+                      ? "Challengeが0件のRevisionは承認できません。Agentに、変更案を出したうえで、その正確なBoundaryが危険になる具体例を探させます。"
+                      : "A revision with zero challenges cannot be approved. Ask the Agent to propose a change, then try to break that exact boundary with a concrete scenario."}
                 </p>
+
+                {taskConfigured && (
+                  <code className="adb-agent-prompt">
+                    {lang === "ja"
+                      ? "このWorkspaceを確認し、この業務に適した委任条件の変更案を1つ提案してください。その後、その正確な新しいBoundaryが危険になる具体例をChallengeとして提示し、Reviewしてください。"
+                      : "Inspect this workspace. Propose one sensible delegation-boundary change for this work. Then challenge that exact new boundary with a concrete scenario before reviewing it."}
+                  </code>
+                )}
               </div>
             ) : (
               current.challenges
@@ -1328,13 +1557,16 @@ export default function DelegationApp() {
                 <button
                   className="adb-check-button"
                   type="button"
+                  disabled={
+                    !taskConfigured
+                  }
                   onClick={
                     runChecks
                   }
                 >
                   {lang === "ja"
-                    ? "現在のRevisionを再検証"
-                    : "Re-check current revision"}
+                    ? "Guardrailと過去判断を再確認"
+                    : "Run guardrail & regression checks"}
                 </button>
               )}
 
@@ -1535,12 +1767,16 @@ export default function DelegationApp() {
             <p>
               {baseToolCount >
               0
-                ? lang === "ja"
-                  ? "Agentは状態確認・変更案作成・Challenge・再検証・履歴確認まで可能です。人が正確なRevisionを承認するまで、反映操作はAgentに存在しません。"
-                  : "The agent can inspect, propose, challenge, review, and inspect history. Apply does not exist in the agent surface until a human approves the exact revision."
+                ? !taskConfigured
+                  ? lang === "ja"
+                    ? "5つのToolは登録されていますが、業務を人が定めるまではAgentによる委任条件の変更・Challenge・Reviewは拒否されます。"
+                    : "Five tools are registered, but authority-changing, challenge, and review actions are rejected until a human scopes the work."
+                  : lang === "ja"
+                    ? "Agentは状態確認・変更案作成・Challenge・再検証・履歴確認まで可能です。人が正確なRevisionを承認するまで、反映操作はAgentに存在しません。"
+                    : "The Agent can inspect, propose, challenge, review, and inspect history. Apply does not exist in the Agent surface until a human approves the exact revision."
                 : lang === "ja"
                   ? "WebMCP対応環境で開くとAgent操作が有効になります。"
-                  : "Open in a WebMCP-enabled environment to expose the agent tools."}
+                  : "Open in a WebMCP-enabled environment to expose the Agent tools."}
             </p>
 
             <div className="adb-capability">
@@ -1606,4 +1842,3 @@ export default function DelegationApp() {
     </div>
   );
 }
-

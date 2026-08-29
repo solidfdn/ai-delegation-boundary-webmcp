@@ -250,3 +250,108 @@ editBoundaryConditionAsHuman(
     createdAt
   );
 }
+
+/**
+ * Scope the work before Agent authority can be changed.
+ *
+ * This is deliberately human-only.
+ * The Agent may inspect the task but cannot define or replace it.
+ *
+ * Task scope is set only while the workspace is pristine.
+ * To evaluate another task, start a new/reset workspace.
+ */
+export function scopeDelegationTaskAsHuman(
+  workspace: DelegationWorkspace,
+  title: string,
+  description: string,
+  createdAt =
+    new Date().toISOString()
+): DelegationWorkspace {
+  const cleanTitle =
+    title.trim();
+
+  const cleanDescription =
+    description.trim();
+
+  if (
+    cleanTitle.length < 3
+  ) {
+    throw new Error(
+      "Task title must contain at least 3 characters."
+    );
+  }
+
+  if (
+    cleanTitle.length > 180
+  ) {
+    throw new Error(
+      "Task title must not exceed 180 characters."
+    );
+  }
+
+  if (
+    cleanDescription.length > 1000
+  ) {
+    throw new Error(
+      "Task context must not exceed 1000 characters."
+    );
+  }
+
+  if (
+    workspace.task.title.trim()
+      .length > 0
+  ) {
+    throw new Error(
+      "Task scope is already fixed for this workspace. Reset the workspace to evaluate another task."
+    );
+  }
+
+  const current =
+    getCurrentRevision(
+      workspace
+    );
+
+  const pristine =
+    workspace.revisions.length === 1 &&
+    current.version === 1 &&
+    current.status === "DRAFT" &&
+    current.challenges.length === 0 &&
+    current.knownDecisions.length === 0 &&
+    current.review === undefined &&
+    workspace.approval === undefined &&
+    workspace.application === undefined;
+
+  if (!pristine) {
+    throw new Error(
+      "Task scope can be set only before delegation analysis begins."
+    );
+  }
+
+  const next =
+    clone(workspace);
+
+  next.task = {
+    title:
+      cleanTitle,
+
+    description:
+      cleanDescription ||
+      undefined
+  };
+
+  const nextCurrent =
+    getCurrentRevision(
+      next
+    );
+
+  nextCurrent.createdBy =
+    "HUMAN";
+
+  nextCurrent.createdAt =
+    createdAt;
+
+  nextCurrent.changeSummary =
+    `Human scoped task: ${cleanTitle}`;
+
+  return next;
+}
