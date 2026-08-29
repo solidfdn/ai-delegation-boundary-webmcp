@@ -520,3 +520,64 @@ footer .navy span:last-child {
       280px minmax(560px, 1fr) 300px;
   }
 }
+
+.publishControls {
+  margin-top: 24px;
+}
+
+.readyAction {
+  width: 100%;
+  border: 1px solid #aab4c4;
+  background: white;
+  padding: 14px 16px;
+  color: #071a44;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.readyAction:hover {
+  border-color: #071a44;
+}
+
+.readyAction.active {
+  border-color: #d9ed00;
+  background: #d9ed00;
+}
+
+.publishedState {
+  border: 1px solid #071a44;
+  padding: 15px 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.publishedState strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.publishedState span {
+  color: #68758b;
+  font-size: 10px;
+}
+
+.patchBadge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 7px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .07em;
+}
+
+.patchBadge.ready {
+  background: #d9ed00;
+}
+
+.patchBadge.published {
+  color: white;
+  background: #071a44;
+}

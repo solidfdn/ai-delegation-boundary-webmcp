@@ -13,11 +13,17 @@ export interface DecisionPatchToolActions {
     changes: Partial<PatchConditions>,
     clearConditions: string[]
   ) => unknown;
+  publishReadyPatch: () => unknown;
 }
 
-function asString(input: Record<string, unknown>, key: string) {
+function asString(
+  input: Record<string, unknown>,
+  key: string
+) {
   const value = input[key];
-  return typeof value === "string" ? value : undefined;
+  return typeof value === "string"
+    ? value
+    : undefined;
 }
 
 function asStringArray(
@@ -26,10 +32,13 @@ function asStringArray(
 ) {
   const value = input[key];
 
-  if (!Array.isArray(value)) return undefined;
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
 
   return value.filter(
-    (item): item is string => typeof item === "string"
+    (item): item is string =>
+      typeof item === "string"
   );
 }
 
@@ -51,7 +60,7 @@ export function registerDecisionPatchTools(
       name: "inspect_workspace",
       title: "Inspect Decision Patch workspace",
       description:
-        "Read the currently observed case, the agent's original decision, the human correction, candidate patches, simulations, and selected patch. Call this before deciding what to do next.",
+        "Read the current observed case, original agent decision, human correction, candidate patches, simulations, ready state, and published state. Use this before deciding what to do next.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -61,14 +70,15 @@ export function registerDecisionPatchTools(
         readOnlyHint: true,
         untrustedContentHint: true
       },
-      execute: async () => actions.inspectWorkspace()
+      execute: async () =>
+        actions.inspectWorkspace()
     },
 
     {
       name: "draft_decision_patches",
       title: "Draft candidate Decision Patches",
       description:
-        "Turn the recorded human correction into Narrow, Balanced, and Broad candidate policy patches. This changes the shared page state but does not publish any rule.",
+        "Turn the recorded human correction into Narrow, Balanced, and Broad candidate policy patches. This changes the shared page but publishes nothing.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -78,21 +88,22 @@ export function registerDecisionPatchTools(
         readOnlyHint: false,
         untrustedContentHint: false
       },
-      execute: async () => actions.draftPatches()
+      execute: async () =>
+        actions.draftPatches()
     },
 
     {
       name: "simulate_patch",
       title: "Simulate one Decision Patch",
       description:
-        "Evaluate one candidate patch against the complete synthetic evaluation matrix. Updates the shared page with affected decisions, reference alignment, counterexamples, and review transitions. Does not publish the patch.",
+        "Evaluate one candidate patch against the complete synthetic evaluation matrix and update the shared page with affected decisions and counterexamples. This never publishes the patch.",
       inputSchema: {
         type: "object",
         properties: {
           patch_id: {
             type: "string",
             description:
-              "Candidate patch ID, for example patch-narrow, patch-balanced, or patch-broad."
+              "Candidate patch ID."
           }
         },
         required: ["patch_id"],
@@ -102,14 +113,17 @@ export function registerDecisionPatchTools(
         readOnlyHint: false,
         untrustedContentHint: false
       },
-      execute: async (input: Record<string, unknown>) => {
-        const patchId = asString(input, "patch_id");
+      execute: async (
+        input: Record<string, unknown>
+      ) => {
+        const patchId =
+          asString(input, "patch_id");
 
         if (!patchId) {
           return {
             status: "error",
             message:
-              "patch_id is required. Inspect the workspace to get available patch IDs."
+              "patch_id is required. Inspect the workspace first."
           };
         }
 
@@ -121,7 +135,7 @@ export function registerDecisionPatchTools(
       name: "compare_decision_patches",
       title: "Compare simulated Decision Patches",
       description:
-        "Compare two or more already-simulated patches by changed decisions, reference alignment, counterexamples, and human-review transitions. Returns evidence for trade-off analysis; it does not choose or publish a patch.",
+        "Compare already-simulated candidate patches by affected decisions, reference alignment, counterexamples, and review transitions. This provides evidence only and does not authorize publication.",
       inputSchema: {
         type: "object",
         properties: {
@@ -131,9 +145,7 @@ export function registerDecisionPatchTools(
               type: "string"
             },
             minItems: 2,
-            maxItems: 3,
-            description:
-              "Optional patch IDs to compare. Omit to compare all candidate patches that already have simulation results."
+            maxItems: 3
           }
         },
         additionalProperties: false
@@ -142,9 +154,14 @@ export function registerDecisionPatchTools(
         readOnlyHint: true,
         untrustedContentHint: false
       },
-      execute: async (input: Record<string, unknown>) =>
+      execute: async (
+        input: Record<string, unknown>
+      ) =>
         actions.comparePatches(
-          asStringArray(input, "patch_ids")
+          asStringArray(
+            input,
+            "patch_ids"
+          )
         )
     },
 
@@ -152,13 +169,12 @@ export function registerDecisionPatchTools(
       name: "revise_decision_patch",
       title: "Revise a candidate Decision Patch",
       description:
-        "Change the generalization boundary of one candidate patch. A revised patch becomes stale and must be simulated again before comparison or publication.",
+        "Change the generalization boundary of one candidate patch. Any prior simulation for that patch becomes stale and must be rerun.",
       inputSchema: {
         type: "object",
         properties: {
           patch_id: {
-            type: "string",
-            description: "Patch ID to revise."
+            type: "string"
           },
           urgency_at_least: {
             type: "string",
@@ -192,9 +208,7 @@ export function registerDecisionPatchTools(
                 "continuityAtLeast"
               ]
             },
-            uniqueItems: true,
-            description:
-              "Optional existing conditions to remove before applying the supplied changes."
+            uniqueItems: true
           }
         },
         required: ["patch_id"],
@@ -204,40 +218,60 @@ export function registerDecisionPatchTools(
         readOnlyHint: false,
         untrustedContentHint: false
       },
-      execute: async (input: Record<string, unknown>) => {
-        const patchId = asString(input, "patch_id");
+      execute: async (
+        input: Record<string, unknown>
+      ) => {
+        const patchId =
+          asString(input, "patch_id");
 
         if (!patchId) {
           return {
             status: "error",
             message:
-              "patch_id is required. Inspect the workspace to get available patch IDs."
+              "patch_id is required."
           };
         }
 
-        const changes: Partial<PatchConditions> = {};
+        const changes:
+          Partial<PatchConditions> = {};
 
-        const urgency = asString(input, "urgency_at_least");
-        const evidence = asString(input, "evidence_at_least");
-        const vulnerability = asString(
-          input,
-          "vulnerability_at_least"
-        );
-        const harm = asString(
-          input,
-          "potential_harm_at_most"
-        );
-        const continuity = asString(
-          input,
-          "continuity_at_least"
-        );
+        const urgency =
+          asString(
+            input,
+            "urgency_at_least"
+          );
+
+        const evidence =
+          asString(
+            input,
+            "evidence_at_least"
+          );
+
+        const vulnerability =
+          asString(
+            input,
+            "vulnerability_at_least"
+          );
+
+        const harm =
+          asString(
+            input,
+            "potential_harm_at_most"
+          );
+
+        const continuity =
+          asString(
+            input,
+            "continuity_at_least"
+          );
 
         if (
           urgency === "LOW" ||
           urgency === "MEDIUM" ||
           urgency === "HIGH"
         ) {
-          changes.urgencyAtLeast = urgency;
+          changes.urgencyAtLeast =
+            urgency;
         }
 
         if (
@@ -245,7 +279,8 @@ export function registerDecisionPatchTools(
           evidence === "PARTIAL" ||
           evidence === "STRONG"
         ) {
-          changes.evidenceAtLeast = evidence;
+          changes.evidenceAtLeast =
+            evidence;
         }
 
         if (
@@ -253,7 +288,8 @@ export function registerDecisionPatchTools(
           vulnerability === "MEDIUM" ||
           vulnerability === "HIGH"
         ) {
-          changes.vulnerabilityAtLeast = vulnerability;
+          changes.vulnerabilityAtLeast =
+            vulnerability;
         }
 
         if (
@@ -261,7 +297,8 @@ export function registerDecisionPatchTools(
           harm === "MEDIUM" ||
           harm === "HIGH"
         ) {
-          changes.potentialHarmAtMost = harm;
+          changes.potentialHarmAtMost =
+            harm;
         }
 
         if (
@@ -269,13 +306,17 @@ export function registerDecisionPatchTools(
           continuity === "MEDIUM" ||
           continuity === "HIGH"
         ) {
-          changes.continuityAtLeast = continuity;
+          changes.continuityAtLeast =
+            continuity;
         }
 
         return actions.revisePatch(
           patchId,
           changes,
-          asStringArray(input, "clear_conditions") ?? []
+          asStringArray(
+            input,
+            "clear_conditions"
+          ) ?? []
         );
       }
     }
@@ -283,17 +324,73 @@ export function registerDecisionPatchTools(
 
   Promise.allSettled(
     tools.map((tool) =>
-      context.registerTool(tool, {
-        signal: controller.signal
-      })
+      context.registerTool(
+        tool,
+        {
+          signal: controller.signal
+        }
+      )
     )
   ).then((results) => {
-    const registered = results.filter(
-      (result) => result.status === "fulfilled"
-    ).length;
-
-    onAvailabilityChange(registered);
+    onAvailabilityChange(
+      results.filter(
+        (result) =>
+          result.status === "fulfilled"
+      ).length
+    );
   });
 
-  return () => controller.abort();
+  return () =>
+    controller.abort();
+}
+
+export function registerPublishReadyPatchTool(
+  actions: DecisionPatchToolActions,
+  onAvailabilityChange: (
+    available: boolean
+  ) => void
+) {
+  const context =
+    document.modelContext;
+
+  if (!context?.registerTool) {
+    onAvailabilityChange(false);
+    return () => {};
+  }
+
+  const controller =
+    new AbortController();
+
+  context.registerTool(
+    {
+      name: "publish_ready_decision_patch",
+      title:
+        "Publish the human-approved Decision Patch",
+      description:
+        "Publish only the exact candidate Decision Patch that the human has explicitly marked ready in the shared page. This tool cannot select or substitute another patch.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false
+      },
+      annotations: {
+        readOnlyHint: false,
+        untrustedContentHint: false
+      },
+      execute: async () =>
+        actions.publishReadyPatch()
+    },
+    {
+      signal: controller.signal
+    }
+  )
+  .then(() =>
+    onAvailabilityChange(true)
+  )
+  .catch(() =>
+    onAvailabilityChange(false)
+  );
+
+  return () =>
+    controller.abort();
 }

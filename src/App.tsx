@@ -23,6 +23,7 @@ import {
 
 import {
   registerDecisionPatchTools,
+  registerPublishReadyPatchTool,
   type DecisionPatchToolActions
 } from "./webmcp/registerTools";
 
@@ -37,6 +38,15 @@ export default function App() {
 
   const [webmcpToolCount, setWebmcpToolCount] =
     useState(0);
+
+  const [publishToolAvailable, setPublishToolAvailable] =
+    useState(false);
+
+  const [readyPatchId, setReadyPatchId] =
+    useState<string | null>(null);
+
+  const [publishedPatchId, setPublishedPatchId] =
+    useState<string | null>(null);
 
   const [patches, setPatches] =
     useState<DecisionPatch[]>([]);
@@ -56,11 +66,15 @@ export default function App() {
   const patchesRef = useRef(patches);
   const simulationsRef = useRef(simulations);
   const selectedPatchIdRef = useRef(selectedPatchId);
+  const readyPatchIdRef = useRef(readyPatchId);
+  const publishedPatchIdRef = useRef(publishedPatchId);
 
   workspaceRef.current = workspace;
   patchesRef.current = patches;
   simulationsRef.current = simulations;
   selectedPatchIdRef.current = selectedPatchId;
+  readyPatchIdRef.current = readyPatchId;
+  publishedPatchIdRef.current = publishedPatchId;
 
   const replacePatches = (next: DecisionPatch[]) => {
     patchesRef.current = next;
@@ -77,6 +91,16 @@ export default function App() {
   const selectPatch = (patchId: string | null) => {
     selectedPatchIdRef.current = patchId;
     setSelectedPatchId(patchId);
+  };
+
+  const markReady = (patchId: string | null) => {
+    readyPatchIdRef.current = patchId;
+    setReadyPatchId(patchId);
+  };
+
+  const markPublished = (patchId: string | null) => {
+    publishedPatchIdRef.current = patchId;
+    setPublishedPatchId(patchId);
   };
 
   const summarizePatch = (patch: DecisionPatch) => ({
@@ -131,7 +155,11 @@ export default function App() {
         simulations:
           Object.values(
             simulationsRef.current
-          ).map(summarizeSimulation)
+          ).map(summarizeSimulation),
+        ready_patch_id:
+          readyPatchIdRef.current,
+        published_patch_id:
+          publishedPatchIdRef.current
       },
       note:
         "Synthetic demonstration environment. No candidate patch is published by these tools."
@@ -153,6 +181,8 @@ export default function App() {
 
       replacePatches(next);
       replaceSimulations({});
+      markReady(null);
+      markPublished(null);
 
       const balanced =
         next.find(
@@ -325,6 +355,12 @@ export default function App() {
 
       replaceSimulations(nextSimulations);
 
+      if (
+        readyPatchIdRef.current === patchId
+      ) {
+        markReady(null);
+      }
+
       return {
         status: "success",
         patch: summarizePatch(revised),
@@ -335,6 +371,53 @@ export default function App() {
         next_step:
           "Simulate this revised patch before comparing or publishing it."
       };
+    },
+
+    publishReadyPatch: () => {
+      const patchId =
+        readyPatchIdRef.current;
+
+      if (!patchId) {
+        return {
+          status: "blocked",
+          message:
+            "No Decision Patch has been marked ready by the human."
+        };
+      }
+
+      const patch =
+        patchesRef.current.find(
+          (candidate) =>
+            candidate.id === patchId
+        );
+
+      const simulation =
+        simulationsRef.current[patchId];
+
+      if (!patch || !simulation) {
+        markReady(null);
+
+        return {
+          status: "blocked",
+          message:
+            "The ready patch no longer has a current simulation. It must be simulated again before publication."
+        };
+      }
+
+      markPublished(patchId);
+      markReady(null);
+
+      return {
+        status: "success",
+        message:
+          "Published the exact Decision Patch previously marked ready by the human.",
+        published_patch:
+          summarizePatch(patch),
+        simulation:
+          summarizeSimulation(simulation),
+        human_authorization:
+          "Explicitly marked ready in the shared page before this tool became available."
+      };
     }
   };
 
@@ -344,6 +427,18 @@ export default function App() {
       setWebmcpToolCount
     );
   }, []);
+
+  useEffect(() => {
+    if (!readyPatchId) {
+      setPublishToolAvailable(false);
+      return;
+    }
+
+    return registerPublishReadyPatchTool(
+      toolActions,
+      setPublishToolAvailable
+    );
+  }, [readyPatchId]);
 
   const t = copy[lang];
   const c = workspace.observedCase;
@@ -378,6 +473,8 @@ export default function App() {
     replacePatches([]);
     replaceSimulations({});
     selectPatch(null);
+    markReady(null);
+    markPublished(null);
   };
 
   const runSimulation = () => {
@@ -780,6 +877,42 @@ export default function App() {
                     )}
                   </div>
 
+                  <div className="publishControls">
+                    {publishedPatchId ===
+                    selectedPatch.id ? (
+                      <div className="publishedState">
+                        <strong>
+                          Published policy
+                        </strong>
+                        <span>
+                          This candidate is now the active demo policy.
+                        </span>
+                      </div>
+                    ) : (
+                      <button
+                        className={
+                          readyPatchId ===
+                          selectedPatch.id
+                            ? "readyAction active"
+                            : "readyAction"
+                        }
+                        onClick={() =>
+                          markReady(
+                            readyPatchId ===
+                            selectedPatch.id
+                              ? null
+                              : selectedPatch.id
+                          )
+                        }
+                      >
+                        {readyPatchId ===
+                        selectedPatch.id
+                          ? "✓ Ready — publish tool unlocked"
+                          : "Mark this patch ready"}
+                      </button>
+                    )}
+                  </div>
+
                   <div className="honesty">
                     Counts describe the complete
                     synthetic combination matrix used
@@ -853,6 +986,18 @@ export default function App() {
                     <div className="patchOutcome">
                       → {patch.outcome}
                     </div>
+
+                    {readyPatchId === patch.id && (
+                      <div className="patchBadge ready">
+                        HUMAN READY
+                      </div>
+                    )}
+
+                    {publishedPatchId === patch.id && (
+                      <div className="patchBadge published">
+                        PUBLISHED
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -871,14 +1016,17 @@ export default function App() {
                 }
               >
                 {webmcpToolCount > 0
-                  ? `${webmcpToolCount} LIVE`
+                  ? `${webmcpToolCount +
+                      (publishToolAvailable ? 1 : 0)} LIVE`
                   : "NOT DETECTED"}
               </span>
             </div>
 
             <p>
               {webmcpToolCount > 0
-                ? "The agent can inspect, draft, simulate, compare, and revise this shared workspace."
+                ? publishToolAvailable
+                  ? "Human ready state detected. The publish tool is now available to the agent."
+                  : "The agent can inspect, draft, simulate, compare, and revise. Publish remains unavailable until a human marks one patch ready."
                 : t.unavailable}
             </p>
           </div>
@@ -906,3 +1054,4 @@ export default function App() {
     </div>
   );
 }
+
