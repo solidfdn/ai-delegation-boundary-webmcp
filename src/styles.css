@@ -12,8 +12,15 @@ body {
   min-width: 1180px;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font: inherit;
+}
+
+button {
+  color: inherit;
 }
 
 .topbar {
@@ -75,7 +82,8 @@ button, input, select, textarea {
 
 .workspace {
   display: grid;
-  grid-template-columns: 310px minmax(600px, 1fr) 310px;
+  grid-template-columns:
+    310px minmax(620px, 1fr) 330px;
   min-height: calc(100vh - 160px);
 }
 
@@ -120,6 +128,7 @@ button, input, select, textarea {
   font-size: 12px;
   font-weight: 700;
   margin-bottom: 14px;
+  letter-spacing: .03em;
 }
 
 .facts {
@@ -187,15 +196,25 @@ textarea {
   width: auto;
 }
 
-.primary {
+.primary,
+.secondaryAction {
   width: 100%;
   border: 0;
   padding: 12px 16px;
   margin-top: 12px;
+  cursor: pointer;
+}
+
+.primary {
+  background: #071a44;
+  color: white;
+  font-weight: 700;
+}
+
+.secondaryAction {
   background: #d9ed00;
   color: #071a44;
   font-weight: 800;
-  cursor: pointer;
 }
 
 .hero {
@@ -204,8 +223,8 @@ textarea {
 
 .hero h1 {
   margin: 0;
-  max-width: 760px;
-  font-size: clamp(42px, 4vw, 67px);
+  max-width: 780px;
+  font-size: clamp(42px, 4vw, 66px);
   line-height: .98;
   font-weight: 400;
   letter-spacing: -.035em;
@@ -219,7 +238,7 @@ textarea {
 
 .impactPanel {
   padding: 22px;
-  min-height: 420px;
+  min-height: 470px;
 }
 
 .emptyState {
@@ -259,11 +278,182 @@ textarea {
 }
 
 .honesty {
-  margin-top: 34px;
-  padding: 14px 0;
+  margin-top: 28px;
+  padding-top: 14px;
   border-top: 1px solid #e1e5eb;
   color: #6d788c;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.simulationIntro {
+  border-top: 1px solid #e1e5eb;
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.simulationIntro > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.simulationIntro strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.eyebrow {
+  color: #6f7b8e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.matrixNote {
+  font-size: 11px;
+  color: #6d788c;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 24px;
+  border: 1px solid #dfe4eb;
+}
+
+.metricsGrid > div {
+  padding: 18px;
+  border-right: 1px solid #dfe4eb;
+}
+
+.metricsGrid > div:last-child {
+  border-right: 0;
+}
+
+.metricsGrid span {
+  display: block;
+  color: #68758b;
+  font-size: 10px;
+  min-height: 28px;
+}
+
+.metricsGrid strong {
+  display: block;
+  margin-top: 8px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.metricsGrid .danger {
+  color: #b23e38;
+}
+
+.counterexampleArea {
+  margin-top: 28px;
+}
+
+.counterexampleArea > p {
+  color: #66738a;
+  font-size: 13px;
+}
+
+.counterexample {
+  display: grid;
+  grid-template-columns: 1.3fr .8fr 1fr;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid #e3e7ed;
+  padding: 13px 0;
+}
+
+.counterexample > div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.counterexample > div:first-child {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.counterexample span,
+.counterexample small {
+  color: #68758b;
+  font-size: 10px;
+}
+
+.counterexample strong {
+  font-size: 11px;
+}
+
+.patchList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.patchCard {
+  width: 100%;
+  text-align: left;
+  padding: 16px;
+  border: 1px solid #dfe4eb;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+.patchCard:hover {
+  border-color: #98a8c0;
+}
+
+.patchCard.selected {
+  border: 2px solid #173a82;
+  padding: 15px;
+}
+
+.patchHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.patchHeader strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.patchHeader span {
+  font-size: 10px;
+  color: #65728a;
+}
+
+.conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 14px 0;
+}
+
+.conditions span {
+  border: 1px solid #dfe4eb;
+  padding: 4px 6px;
+  font-size: 9px;
+  background: #fafbfd;
+}
+
+.patchOutcome {
+  color: #667800;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .webmcpCard {
@@ -326,6 +516,7 @@ footer .navy span:last-child {
 
 @media (max-width: 1280px) {
   .workspace {
-    grid-template-columns: 280px minmax(540px, 1fr) 280px;
+    grid-template-columns:
+      280px minmax(560px, 1fr) 300px;
   }
 }
