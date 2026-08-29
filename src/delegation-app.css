@@ -2518,14 +2518,20 @@ select:focus-visible {
   }
 }
 /* ==========================================================
-   SOLIFAN HERO COMPOSITION V5
-   Intentional typography, balance and revision placement.
+   SOLIFAN HERO COMPOSITION V6
+   Editorial hierarchy + deliberate vertical rhythm.
    ========================================================== */
 
 /*
- * Desktop:
- * The headline and Revision state form one composition.
- * The title no longer wraps by accident.
+ * HERO PRINCIPLE
+ *
+ * Lime rule        = entry point
+ * Eyebrow          = category
+ * Headline         = proposition
+ * Description      = explanation
+ * Revision         = controlled-state counterweight
+ *
+ * Each layer gets its own breathing room.
  */
 
 .adb-app .adb-hero {
@@ -2533,71 +2539,126 @@ select:focus-visible {
 
   grid-template-columns:
     minmax(0, 1fr)
-    clamp(220px, 18vw, 270px);
+    clamp(225px, 17vw, 260px);
 
-  gap:
+  column-gap:
     clamp(
-      42px,
-      6vw,
-      104px
+      54px,
+      6.5vw,
+      112px
     );
 
   align-items: center;
 
   padding:
-    clamp(52px, 4.6vw, 70px)
+    clamp(54px, 4.4vw, 66px)
     clamp(30px, 5vw, 78px)
-    clamp(48px, 4.2vw, 62px);
+    clamp(50px, 4vw, 58px);
 }
+
+/* ----------------------------------------------------------
+   LEFT COMPOSITION
+   ---------------------------------------------------------- */
 
 .adb-app .adb-hero-copy {
   width: 100%;
-  max-width: 920px;
+  max-width: 900px;
 }
 
+/*
+ * The lime rule is a quiet opening mark.
+ * It should not visually attach to the eyebrow.
+ */
+
 .adb-app .adb-hero-copy::before {
-  margin-bottom: 24px;
+  width: 30px;
+  height: 3px;
+
+  margin-bottom: 23px;
 }
+
+/*
+ * Eyebrow becomes its own line.
+ * This is the gap that was missing.
+ */
+
+.adb-app .adb-eyebrow {
+  display: block;
+
+  margin: 0 0 18px;
+
+  color: var(--muted);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  line-height: 1;
+
+  letter-spacing: .16em;
+}
+
+/*
+ * The headline is intentionally two lines on desktop:
+ *
+ * Decide what an AI agent
+ * may do on its own.
+ *
+ * Slightly less size and slightly more line-height
+ * gives it editorial confidence instead of compression.
+ */
 
 .adb-app .adb-hero-title {
   width: 100%;
   max-width: none;
 
   margin:
-    10px 0 19px;
+    0 0 22px;
 
   font-size:
     clamp(
-      46px,
-      4vw,
-      66px
+      48px,
+      3.65vw,
+      62px
     );
 
   font-weight: 400;
-  line-height: .99;
+
+  line-height: 1.035;
 
   letter-spacing:
-    -.043em;
+    -.034em;
 
   text-wrap: balance;
 }
 
 .adb-app .adb-hero-title-line {
   display: block;
-
   white-space: nowrap;
 }
 
+/*
+ * Description remains subordinate,
+ * but not visually detached from the proposition.
+ */
+
 .adb-app .adb-hero-copy > p {
-  max-width: 760px;
+  max-width: 735px;
+
+  margin: 0;
+
+  color: var(--muted);
 
   font-size: 14px;
-  line-height: 1.68;
+  line-height: 1.72;
 }
 
+/* ----------------------------------------------------------
+   REVISION COUNTERWEIGHT
+   ---------------------------------------------------------- */
+
 /*
- * Revision is not a floating sidebar.
- * It is the counterweight to the headline.
+ * Revision should balance the entire proposition block,
+ * not merely sit beside the headline.
  */
 
 .adb-app .adb-revision-state {
@@ -2605,19 +2666,25 @@ select:focus-visible {
   align-self: center;
 
   width: 100%;
-  max-width: 270px;
+  max-width: 255px;
 
-  margin-top: 22px;
+  margin-top: 30px;
 
   padding-top: 18px;
 }
 
+.adb-app .adb-revision-state > span {
+  margin-bottom: 1px;
+}
+
 .adb-app .adb-revision-state small {
-  max-width: 220px;
+  max-width: 210px;
+
+  line-height: 1.5;
 }
 
 /* ==========================================================
-   Portrait desktop / narrow laptop
+   NARROW DESKTOP / PORTRAIT LAPTOP
    ========================================================== */
 
 @media (
@@ -2628,51 +2695,53 @@ select:focus-visible {
   .adb-app .adb-hero {
     grid-template-columns:
       minmax(0, 1fr)
-      220px;
+      215px;
 
-    gap: 38px;
+    column-gap: 42px;
 
     padding:
-      48px
+      50px
       clamp(30px, 4vw, 52px)
-      44px;
+      46px;
+  }
+
+  .adb-app .adb-hero-copy::before {
+    margin-bottom: 21px;
+  }
+
+  .adb-app .adb-eyebrow {
+    margin-bottom: 17px;
   }
 
   .adb-app .adb-hero-title {
+    margin-bottom: 20px;
+
     font-size:
       clamp(
-        44px,
-        5.05vw,
-        54px
+        46px,
+        4.65vw,
+        52px
       );
 
-    line-height: 1;
+    line-height: 1.04;
   }
 
   .adb-app .adb-hero-copy > p {
-    max-width: 650px;
+    max-width: 625px;
 
     font-size: 13px;
+    line-height: 1.7;
   }
 
   .adb-app .adb-revision-state {
-    max-width: 220px;
-    margin-top: 18px;
-  }
+    max-width: 215px;
 
-  /*
-   * Preserve the deliberate semantic break:
-   *
-   * Decide what an AI agent
-   * may do on its own.
-   */
-  .adb-app .adb-hero-title-line {
-    white-space: nowrap;
+    margin-top: 27px;
   }
 }
 
 /* ==========================================================
-   Mobile / genuinely narrow viewport
+   TABLET / MOBILE
    ========================================================== */
 
 @media (max-width: 900px) {
@@ -2680,87 +2749,109 @@ select:focus-visible {
     grid-template-columns:
       1fr;
 
-    gap: 34px;
+    row-gap: 38px;
 
     padding:
-      38px 20px 34px;
+      40px 20px 36px;
   }
 
   .adb-app .adb-hero-copy {
     max-width: 720px;
   }
 
+  .adb-app .adb-hero-copy::before {
+    margin-bottom: 20px;
+  }
+
+  .adb-app .adb-eyebrow {
+    margin-bottom: 15px;
+
+    font-size: 9px;
+  }
+
   .adb-app .adb-hero-title {
     max-width: 14ch;
 
     margin:
-      9px 0 17px;
+      0 0 20px;
 
     font-size:
       clamp(
         38px,
-        8.7vw,
-        50px
+        8.4vw,
+        49px
       );
 
-    line-height: 1;
+    line-height: 1.035;
 
     letter-spacing:
-      -.038em;
+      -.032em;
 
     text-wrap: balance;
   }
 
   /*
-   * On genuinely narrow screens, release the fixed
-   * desktop line break and let the phrase balance itself.
+   * Narrow screens need natural wrapping.
+   * Desktop semantic line break is released here.
    */
+
   .adb-app .adb-hero-title-line {
     display: inline;
     white-space: normal;
   }
 
   .adb-app .adb-hero-copy > p {
-    max-width: 620px;
+    max-width: 610px;
 
     font-size: 14px;
-    line-height: 1.65;
+    line-height: 1.68;
   }
 
   .adb-app .adb-revision-state {
     justify-self: stretch;
     align-self: auto;
 
-    width: min(100%, 320px);
-    max-width: 320px;
+    width: min(100%, 310px);
+    max-width: 310px;
 
-    margin-top: 8px;
+    margin-top: 4px;
   }
 }
 
 @media (max-width: 520px) {
   .adb-app .adb-hero {
-    gap: 30px;
+    row-gap: 32px;
 
     padding:
-      34px 18px 30px;
+      36px 18px 32px;
+  }
+
+  .adb-app .adb-hero-copy::before {
+    margin-bottom: 18px;
+  }
+
+  .adb-app .adb-eyebrow {
+    margin-bottom: 14px;
   }
 
   .adb-app .adb-hero-title {
     max-width: 12.5ch;
 
+    margin-bottom: 18px;
+
     font-size:
       clamp(
         36px,
-        10.5vw,
-        44px
+        10.2vw,
+        43px
       );
 
-    line-height: 1.01;
+    line-height: 1.04;
   }
 
   .adb-app .adb-hero-copy > p {
     font-size: 13px;
+    line-height: 1.65;
   }
 
   .adb-app .adb-revision-state {
