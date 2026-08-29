@@ -31,6 +31,7 @@ import {
 
 import { copy } from "./i18n/copy";
 import "./styles.css";
+import "./visual-polish.css";
 
 const LEVELS: Level[] = ["LOW", "MEDIUM", "HIGH"];
 const EVIDENCE_LEVELS: EvidenceLevel[] = [
@@ -1731,6 +1732,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
