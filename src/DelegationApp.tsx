@@ -2052,13 +2052,26 @@ export default function DelegationApp() {
                   </strong>
 
                   <div className="adb-runtime-map">
-                    <div className="adb-runtime-row adb-runtime-backend-row">
+                    <div className="adb-runtime-row adb-runtime-ready-row">
                       <span>
-                        BACKEND
+                        READY
                       </span>
 
                       <p>
-                        No AI backend.
+                        Site tools detected on this page.
+                      </p>
+                    </div>
+
+                    <div className="adb-runtime-row adb-runtime-try-row">
+                      <span>
+                        TRY
+                      </span>
+
+                      <p>
+                        Ask ChatGPT:
+                        <code>
+                          Inspect this workspace.
+                        </code>
                       </p>
                     </div>
 
@@ -2068,7 +2081,7 @@ export default function DelegationApp() {
                       </span>
 
                       <p>
-                        Your WebMCP-compatible client supplies the Agent.
+                        ChatGPT uses the WebMCP tools exposed by this page.
                       </p>
                     </div>
 
@@ -2081,6 +2094,16 @@ export default function DelegationApp() {
                         The web app owns the boundary, Guardrails, human judgments, approval, and applied state.
                       </p>
                     </div>
+
+                    <div className="adb-runtime-row adb-runtime-backend-row">
+                      <span>
+                        BACKEND
+                      </span>
+
+                      <p>
+                        No AI backend.
+                      </p>
+                    </div>
                   </div>
                 </>
               ) : (
@@ -2089,37 +2112,54 @@ export default function DelegationApp() {
                     Human workspace available
                   </strong>
 
-                  <div className="adb-runtime-map">
+                  <div className="adb-runtime-map adb-runtime-setup">
+                    <div className="adb-runtime-row adb-runtime-open-row">
+                      <span>
+                        OPEN
+                      </span>
+
+                      <p>
+                        ChatGPT desktop app → built-in browser
+                      </p>
+                    </div>
+
+                    <div className="adb-runtime-row adb-runtime-check-row">
+                      <span>
+                        CHECK
+                      </span>
+
+                      <p>
+                        Confirm the site-tools arrow appears in the address bar.
+                      </p>
+                    </div>
+
+                    <div className="adb-runtime-row adb-runtime-try-row">
+                      <span>
+                        ASK
+                      </span>
+
+                      <p>
+                        Tell ChatGPT:
+                        <code>
+                          Inspect this workspace.
+                        </code>
+                      </p>
+                    </div>
+
                     <div className="adb-runtime-row adb-runtime-authority-row">
                       <span>
                         WORKSPACE
                       </span>
 
                       <p>
-                        This page is still available for human review and boundary editing.
-                      </p>
-                    </div>
-
-                    <div className="adb-runtime-row adb-runtime-agent-row">
-                      <span>
-                        AGENT
-                      </span>
-
-                      <p>
-                        To run Agent propose, challenge, and review actions, open this page in ChatGPT or another WebMCP-enabled client.
-                      </p>
-                    </div>
-
-                    <div className="adb-runtime-row adb-runtime-backend-row">
-                      <span>
-                        BACKEND
-                      </span>
-
-                      <p>
-                        No AI backend required.
+                        Human review and boundary editing still work in this browser.
                       </p>
                     </div>
                   </div>
+
+                  <small className="adb-runtime-connection-note">
+                    No separate connection required.
+                  </small>
                 </>
               )}
             </div>

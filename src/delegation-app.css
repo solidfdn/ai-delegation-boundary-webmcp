@@ -3090,3 +3090,113 @@ strong {
   color:
     var(--lime);
 }
+
+/* ==========================================================
+   JUDGE RUNTIME GUIDE V8
+   Three-step access guidance, inside the existing WebMCP card.
+   ========================================================== */
+
+.adb-app .adb-runtime-ready-row > span {
+  color: var(--ink);
+}
+
+.adb-app .adb-runtime-ready-row > p {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/*
+ * TRY / ASK is the actual hand-off point.
+ * Use the blue-gray service cue rather than lime.
+ */
+
+.adb-app .adb-runtime-try-row {
+  background:
+    linear-gradient(
+      90deg,
+      var(--hotel-blue-soft),
+      transparent 88%
+    );
+}
+
+.adb-app .adb-runtime-try-row > span {
+  color: var(--hotel-blue);
+}
+
+.adb-app .adb-runtime-try-row > p {
+  color: var(--ink);
+}
+
+.adb-app .adb-runtime-try-row code {
+  display: block;
+
+  margin-top: 4px;
+
+  color: var(--hotel-blue);
+
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/*
+ * Disconnected setup:
+ * clear sequence without turning the card into documentation.
+ */
+
+.adb-app .adb-runtime-open-row > span,
+.adb-app .adb-runtime-check-row > span {
+  color: var(--hotel-blue);
+}
+
+.adb-app .adb-runtime-open-row > p {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.adb-app .adb-runtime-check-row > p {
+  color: var(--muted);
+}
+
+.adb-app .adb-runtime-connection-note {
+  display: block;
+
+  margin-top: 10px;
+
+  color: var(--muted);
+
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.45;
+
+  letter-spacing: .02em;
+}
+
+/*
+ * Keep the architecture hierarchy intact.
+ */
+
+.adb-app .adb-runtime-agent-row > p {
+  color: var(--hotel-blue);
+  font-weight: 600;
+}
+
+.adb-app .adb-runtime-authority-row > p {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.adb-app .adb-runtime-backend-row > p {
+  color: var(--muted);
+}
+
+/*
+ * Connected remains the only bright status signal.
+ */
+
+.adb-app .adb-agent-card-head .live {
+  border-color: var(--lime);
+  background: var(--lime-whisper);
+  color: var(--ink);
+}
