@@ -2048,36 +2048,17 @@ export default function DelegationApp() {
               {baseToolCount > 0 ? (
                 <>
                   <strong className="adb-runtime-primary">
-                    Site tools registered
+                    Use with ChatGPT
                   </strong>
 
                   <div className="adb-runtime-map">
-                    <div className="adb-runtime-row adb-runtime-ready-row">
-                      <span>
-                        RUNTIME
-                      </span>
-
-                      <p>
-                        WebMCP is available in this browser.
-                      </p>
-                    </div>
-
-                    <div className="adb-runtime-row adb-runtime-open-row">
-                      <span>
-                        CHATGPT
-                      </span>
-
-                      <p>
-                        In the ChatGPT desktop app’s built-in browser, open this page and ask:
-                      </p>
-                    </div>
-
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        ASK
+                        TRY
                       </span>
 
                       <p>
+                        Open this page in the ChatGPT desktop app’s built-in browser and ask:
                         <code>
                           Inspect this workspace.
                         </code>
@@ -2090,7 +2071,7 @@ export default function DelegationApp() {
                       </span>
 
                       <p>
-                        A compatible Agent client can call the WebMCP tools exposed by this page.
+                        A compatible Agent client calls the WebMCP tools exposed by this page. No AI backend.
                       </p>
                     </div>
 
@@ -2103,16 +2084,6 @@ export default function DelegationApp() {
                         The web app owns the boundary, Guardrails, human judgments, approval, and applied state.
                       </p>
                     </div>
-
-                    <div className="adb-runtime-row adb-runtime-backend-row">
-                      <span>
-                        BACKEND
-                      </span>
-
-                      <p>
-                        No AI backend.
-                      </p>
-                    </div>
                   </div>
                 </>
               ) : (
@@ -2122,32 +2093,13 @@ export default function DelegationApp() {
                   </strong>
 
                   <div className="adb-runtime-map adb-runtime-setup">
-                    <div className="adb-runtime-row adb-runtime-backend-row">
-                      <span>
-                        BROWSER
-                      </span>
-
-                      <p>
-                        WebMCP is not available in this browser.
-                      </p>
-                    </div>
-
-                    <div className="adb-runtime-row adb-runtime-open-row">
-                      <span>
-                        CHATGPT
-                      </span>
-
-                      <p>
-                        Open this page in the ChatGPT desktop app’s built-in browser.
-                      </p>
-                    </div>
-
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        ASK
+                        TRY
                       </span>
 
                       <p>
+                        Open this page in the ChatGPT desktop app’s built-in browser and ask:
                         <code>
                           Inspect this workspace.
                         </code>
