@@ -2082,3 +2082,166 @@ select:focus-visible {
     justify-self: start;
   }
 }
+/* ==========================================================
+   SOLIFAN JUDGE EXPERIENCE V3
+   ========================================================== */
+
+/*
+ * Supplied transparent PNG.
+ * No filter, no recoloring, no background treatment.
+ *
+ * The visual center/contact point of the crane sits directly
+ * on the revision rule, approximately 2 cm left of the
+ * earlier far-right placement.
+ */
+
+.adb-app .adb-revision-state {
+  position: relative;
+}
+
+.adb-app .adb-revision-logo {
+  position: absolute;
+  z-index: 2;
+
+  top: -26px;
+  right: 64px;
+
+  width: 54px;
+  height: 54px;
+
+  object-fit: contain;
+
+  pointer-events: none;
+  user-select: none;
+}
+
+/* WebMCP runtime state */
+
+.adb-app .adb-agent-card-head {
+  align-items: flex-start;
+}
+
+.adb-app .adb-agent-card-head strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.adb-app .adb-agent-card-head > span {
+  max-width: 86px;
+
+  text-align: center;
+
+  font-size: 7px;
+  line-height: 1.35;
+  letter-spacing: .06em;
+}
+
+.adb-app .adb-runtime-copy {
+  margin-top: 12px;
+
+  border-top:
+    1px solid var(--line);
+
+  padding-top: 11px;
+}
+
+.adb-app .adb-runtime-copy strong {
+  display: block;
+
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.adb-app .adb-runtime-copy p {
+  margin: 6px 0 0;
+
+  color: var(--muted);
+
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.adb-app .adb-runtime-copy small {
+  display: block;
+
+  margin-top: 9px;
+
+  color: var(--ink);
+
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+/*
+ * Footer.
+ * SOLIFAN is already established in the top-left header.
+ * No duplicate brand block and no lime panel.
+ */
+
+.adb-app .adb-footer {
+  display: flex;
+
+  min-height: 64px;
+
+  border-top:
+    1px solid var(--ink);
+
+  background:
+    var(--ink);
+}
+
+.adb-app .adb-footer p {
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  min-height: 64px;
+
+  margin: 0;
+
+  padding:
+    0
+    clamp(30px, 5vw, 78px);
+
+  background:
+    var(--ink);
+
+  color: #ffffff;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: .015em;
+}
+
+/* Existing left-top header remains unchanged. */
+
+@media (max-width: 900px) {
+  .adb-app .adb-revision-logo {
+    top: -25px;
+    right: 56px;
+
+    width: 52px;
+    height: 52px;
+  }
+
+  .adb-app .adb-footer p {
+    min-height: 64px;
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 520px) {
+  .adb-app .adb-revision-logo {
+    top: -24px;
+    right: 46px;
+
+    width: 50px;
+    height: 50px;
+  }
+}

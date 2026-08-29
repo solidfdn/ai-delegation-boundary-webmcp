@@ -843,6 +843,12 @@ export default function DelegationApp() {
         </div>
 
         <div className="adb-revision-state">
+          <img
+            className="adb-revision-logo"
+            src={`${import.meta.env.BASE_URL}solifan-crane.png`}
+            alt=""
+            aria-hidden="true"
+          />
           <span>
             REVISION {current.version}
           </span>
@@ -1923,45 +1929,52 @@ export default function DelegationApp() {
                 </span>
 
                 <strong>
-                  {lang === "ja"
-                    ? "Agentの操作権限"
-                    : "Agent capability surface"}
+                  {baseToolCount > 0
+                    ? "WebMCP connected"
+                    : "Human workspace available"}
                 </strong>
               </div>
 
               <span
                 className={
-                  baseToolCount >
-                  0
+                  baseToolCount > 0
                     ? "live"
                     : "offline"
                 }
               >
-                {baseToolCount >
-                0
-                  ? `${baseToolCount +
-                      (applyToolAvailable
-                        ? 1
-                        : 0)} LIVE`
+                {baseToolCount > 0
+                  ? "CONNECTED"
                   : "NOT DETECTED"}
               </span>
             </div>
 
-            <p>
-              {baseToolCount >
-              0
-                ? !taskConfigured
-                  ? lang === "ja"
-                    ? "5つのToolは登録されていますが、業務を人が定めるまではAgentによる委任条件の変更・Challenge・Reviewは拒否されます。"
-                    : "Five tools are registered, but authority-changing, challenge, and review actions are rejected until a human scopes the work."
-                  : lang === "ja"
-                    ? "Agentは状態確認・変更案作成・Challenge・再検証・履歴確認まで可能です。人が正確なRevisionを承認するまで、反映操作はAgentに存在しません。"
-                    : "The Agent can inspect, propose, challenge, review, and inspect history. Apply does not exist in the Agent surface until a human approves the exact revision."
-                : lang === "ja"
-                  ? "WebMCP対応環境で開くとAgent操作が有効になります。"
-                  : "Open in a WebMCP-enabled environment to expose the Agent tools."}
-            </p>
+            <div className="adb-runtime-copy">
+              {baseToolCount > 0 ? (
+                <>
+                  <strong>
+                    Agent actions available
+                  </strong>
 
+                  <p>
+                    No AI backend required. Agent actions run through your WebMCP-compatible client.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <strong>
+                    Connect a WebMCP agent for propose &amp; challenge.
+                  </strong>
+
+                  <p>
+                    To experience the full workflow, open this page in ChatGPT or a WebMCP-enabled browser.
+                  </p>
+
+                  <small>
+                    No AI backend required.
+                  </small>
+                </>
+              )}
+            </div>
             <div className="adb-capability">
               <div>
                 <span>
@@ -2012,14 +2025,8 @@ export default function DelegationApp() {
       </main>
 
       <footer className="adb-footer">
-        <div>
-          SOLIFAN
-        </div>
-
         <p>
-          {lang === "ja"
-            ? "AIに何ができるかではなく、どこまで任せるかを設計する。"
-            : "Design what the agent is allowed to do—not only what it can do."}
+          Foundations empower challenges.
         </p>
       </footer>
     </div>
