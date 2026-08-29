@@ -2026,7 +2026,7 @@ export default function DelegationApp() {
 
                 <strong>
                   {baseToolCount > 0
-                    ? "WebMCP connected"
+                    ? "WebMCP available"
                     : "WebMCP not detected"}
                 </strong>
               </div>
@@ -2039,8 +2039,8 @@ export default function DelegationApp() {
                 }
               >
                 {baseToolCount > 0
-                  ? "CONNECTED"
-                  : "NOT DETECTED"}
+                  ? `${baseToolCount + (applyToolAvailable ? 1 : 0)} TOOLS`
+                  : "HUMAN ONLY"}
               </span>
             </div>
 
@@ -2048,27 +2048,36 @@ export default function DelegationApp() {
               {baseToolCount > 0 ? (
                 <>
                   <strong className="adb-runtime-primary">
-                    Agent actions available
+                    Site tools registered
                   </strong>
 
                   <div className="adb-runtime-map">
                     <div className="adb-runtime-row adb-runtime-ready-row">
                       <span>
-                        READY
+                        RUNTIME
                       </span>
 
                       <p>
-                        Site tools detected on this page.
+                        WebMCP is available in this browser.
+                      </p>
+                    </div>
+
+                    <div className="adb-runtime-row adb-runtime-open-row">
+                      <span>
+                        CHATGPT
+                      </span>
+
+                      <p>
+                        In the ChatGPT desktop app’s built-in browser, open this page and ask:
                       </p>
                     </div>
 
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        TRY
+                        ASK
                       </span>
 
                       <p>
-                        Ask ChatGPT:
                         <code>
                           Inspect this workspace.
                         </code>
@@ -2081,7 +2090,7 @@ export default function DelegationApp() {
                       </span>
 
                       <p>
-                        ChatGPT uses the WebMCP tools exposed by this page.
+                        A compatible Agent client can call the WebMCP tools exposed by this page.
                       </p>
                     </div>
 
@@ -2113,23 +2122,23 @@ export default function DelegationApp() {
                   </strong>
 
                   <div className="adb-runtime-map adb-runtime-setup">
-                    <div className="adb-runtime-row adb-runtime-open-row">
+                    <div className="adb-runtime-row adb-runtime-backend-row">
                       <span>
-                        OPEN
+                        BROWSER
                       </span>
 
                       <p>
-                        ChatGPT desktop app → built-in browser
+                        WebMCP is not available in this browser.
                       </p>
                     </div>
 
-                    <div className="adb-runtime-row adb-runtime-check-row">
+                    <div className="adb-runtime-row adb-runtime-open-row">
                       <span>
-                        CHECK
+                        CHATGPT
                       </span>
 
                       <p>
-                        Confirm the site-tools arrow appears in the address bar.
+                        Open this page in the ChatGPT desktop app’s built-in browser.
                       </p>
                     </div>
 
@@ -2139,7 +2148,6 @@ export default function DelegationApp() {
                       </span>
 
                       <p>
-                        Tell ChatGPT:
                         <code>
                           Inspect this workspace.
                         </code>
@@ -2155,11 +2163,17 @@ export default function DelegationApp() {
                         Human review and boundary editing still work in this browser.
                       </p>
                     </div>
-                  </div>
 
-                  <small className="adb-runtime-connection-note">
-                    No separate connection required.
-                  </small>
+                    <div className="adb-runtime-row adb-runtime-backend-row">
+                      <span>
+                        BACKEND
+                      </span>
+
+                      <p>
+                        No AI backend required.
+                      </p>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
