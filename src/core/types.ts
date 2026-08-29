@@ -172,6 +172,7 @@ export type ChallengeStatus =
 export type ChallengeResolution =
   | "KEEP_HUMAN"
   | "ALLOW_AGENT"
+  | "DO_NOT_DELEGATE"
   | "CHANGE_BOUNDARY"
   | "NOT_APPLICABLE";
 
@@ -295,3 +296,4 @@ export interface DelegationWorkspace {
    */
   application?: RevisionApplication;
 }
+
