@@ -2182,10 +2182,9 @@ select:focus-visible {
 .adb-app .adb-footer {
   display: flex;
 
-  min-height: 64px;
+  min-height: 96px;
 
-  border-top:
-    1px solid var(--ink);
+  border-top: 0;
 
   background:
     var(--ink);
@@ -2196,7 +2195,7 @@ select:focus-visible {
   align-items: center;
 
   width: 100%;
-  min-height: 64px;
+  min-height: 96px;
 
   margin: 0;
 
@@ -2207,16 +2206,24 @@ select:focus-visible {
   background:
     var(--ink);
 
-  color: #ffffff;
+  color:
+    rgba(255, 255, 255, .96);
 
   font-family:
     Georgia,
     "Times New Roman",
     serif;
 
-  font-size: 12px;
+  font-size:
+    clamp(
+      17px,
+      1.45vw,
+      20px
+    );
+
   font-weight: 400;
-  letter-spacing: .015em;
+  line-height: 1.25;
+  letter-spacing: -.012em;
 }
 
 /* Existing left-top header remains unchanged. */
@@ -2230,9 +2237,15 @@ select:focus-visible {
     height: 52px;
   }
 
+  .adb-app .adb-footer {
+    min-height: 78px;
+  }
+
   .adb-app .adb-footer p {
-    min-height: 64px;
+    min-height: 78px;
     padding: 0 20px;
+
+    font-size: 16px;
   }
 }
 
