@@ -10,6 +10,7 @@ import { initialWorkspace } from "./domains/universal-demo";
 import type {
   Decision,
   DecisionPatch,
+  PatchConditions,
   PatchSimulation,
   WorkspaceState
 } from "./core/types";
@@ -20,7 +21,11 @@ import {
   simulatePatch
 } from "./core/decisionEngine";
 
-import { registerWorkspaceTool } from "./webmcp/registerTools";
+import {
+  registerDecisionPatchTools,
+  type DecisionPatchToolActions
+} from "./webmcp/registerTools";
+
 import { copy } from "./i18n/copy";
 import "./styles.css";
 
@@ -30,8 +35,8 @@ export default function App() {
   const [workspace, setWorkspace] =
     useState<WorkspaceState>(initialWorkspace);
 
-  const [webmcpAvailable, setWebmcpAvailable] =
-    useState(false);
+  const [webmcpToolCount, setWebmcpToolCount] =
+    useState(0);
 
   const [patches, setPatches] =
     useState<DecisionPatch[]>([]);
@@ -48,12 +53,295 @@ export default function App() {
   );
 
   const workspaceRef = useRef(workspace);
+  const patchesRef = useRef(patches);
+  const simulationsRef = useRef(simulations);
+  const selectedPatchIdRef = useRef(selectedPatchId);
+
   workspaceRef.current = workspace;
+  patchesRef.current = patches;
+  simulationsRef.current = simulations;
+  selectedPatchIdRef.current = selectedPatchId;
+
+  const replacePatches = (next: DecisionPatch[]) => {
+    patchesRef.current = next;
+    setPatches(next);
+  };
+
+  const replaceSimulations = (
+    next: Record<string, PatchSimulation>
+  ) => {
+    simulationsRef.current = next;
+    setSimulations(next);
+  };
+
+  const selectPatch = (patchId: string | null) => {
+    selectedPatchIdRef.current = patchId;
+    setSelectedPatchId(patchId);
+  };
+
+  const summarizePatch = (patch: DecisionPatch) => ({
+    id: patch.id,
+    scope: patch.scope,
+    outcome: patch.outcome,
+    conditions: patch.conditions,
+    simulation_status:
+      simulationsRef.current[patch.id]
+        ? "CURRENT"
+        : "NOT_SIMULATED"
+  });
+
+  const summarizeSimulation = (
+    result: PatchSimulation
+  ) => ({
+    patch_id: result.patchId,
+    evaluated_combinations: result.total,
+    decisions_changed: result.changed,
+    aligned_with_synthetic_reference: result.aligned,
+    counterexamples: result.counterexamples,
+    human_reviews_transitioned:
+      result.reviewsTransitioned,
+    example_counterexamples:
+      result.counterexampleCases.slice(0, 3).map((c) => ({
+        id: c.id,
+        urgency: c.urgency,
+        evidence: c.evidenceStrength,
+        potential_harm: c.potentialHarm,
+        vulnerability: c.vulnerability,
+        continuity_impact: c.continuityImpact,
+        baseline: c.baselineDecision,
+        synthetic_reference: c.referenceDecision
+      }))
+  });
+
+  const toolActions: DecisionPatchToolActions = {
+    inspectWorkspace: () => ({
+      status: "success",
+      workspace: {
+        observed_case: workspaceRef.current.observedCase,
+        agent_decision:
+          workspaceRef.current.agentDecision,
+        human_correction:
+          workspaceRef.current.humanCorrection,
+        precedent_recorded:
+          workspaceRef.current.precedentRecorded,
+        selected_patch_id:
+          selectedPatchIdRef.current,
+        candidate_patches:
+          patchesRef.current.map(summarizePatch),
+        simulations:
+          Object.values(
+            simulationsRef.current
+          ).map(summarizeSimulation)
+      },
+      note:
+        "Synthetic demonstration environment. No candidate patch is published by these tools."
+    }),
+
+    draftPatches: () => {
+      const current = workspaceRef.current;
+
+      if (!current.precedentRecorded) {
+        return {
+          status: "blocked",
+          message:
+            "No human precedent has been recorded. Ask the user to record a correction in the shared page before drafting Decision Patches."
+        };
+      }
+
+      const next =
+        generateCandidatePatches(current);
+
+      replacePatches(next);
+      replaceSimulations({});
+
+      const balanced =
+        next.find(
+          (patch) => patch.scope === "BALANCED"
+        ) ?? next[0];
+
+      selectPatch(balanced?.id ?? null);
+
+      return {
+        status: "success",
+        message:
+          "Created three candidate Decision Patches. No rule has been published.",
+        patches: next.map(summarizePatch),
+        next_step:
+          "Simulate candidate patches before comparing or recommending a generalization boundary."
+      };
+    },
+
+    simulatePatch: (patchId: string) => {
+      const patch =
+        patchesRef.current.find(
+          (candidate) => candidate.id === patchId
+        );
+
+      if (!patch) {
+        return {
+          status: "error",
+          message:
+            `Patch "${patchId}" does not exist. Inspect the workspace or draft candidate patches first.`
+        };
+      }
+
+      const result =
+        simulatePatch(patch, evaluationSet);
+
+      const nextSimulations = {
+        ...simulationsRef.current,
+        [patchId]: result
+      };
+
+      replaceSimulations(nextSimulations);
+      selectPatch(patchId);
+
+      return {
+        status: "success",
+        patch: summarizePatch(patch),
+        simulation: summarizeSimulation(result),
+        note:
+          "Results are deterministic counts over the complete synthetic combination matrix, not estimates of real-world frequency or business impact."
+      };
+    },
+
+    comparePatches: (patchIds?: string[]) => {
+      const ids =
+        patchIds?.length
+          ? patchIds
+          : patchesRef.current.map(
+              (patch) => patch.id
+            );
+
+      const missing = ids.filter(
+        (id) => !simulationsRef.current[id]
+      );
+
+      if (missing.length > 0) {
+        return {
+          status: "blocked",
+          message:
+            "Comparison requires current simulation results for every requested patch.",
+          missing_simulations: missing,
+          next_step:
+            "Simulate the missing patches first."
+        };
+      }
+
+      if (ids.length < 2) {
+        return {
+          status: "blocked",
+          message:
+            "At least two simulated patches are required for comparison."
+        };
+      }
+
+      const comparison = ids.map((id) => {
+        const patch =
+          patchesRef.current.find(
+            (candidate) => candidate.id === id
+          );
+
+        const result =
+          simulationsRef.current[id];
+
+        return {
+          patch:
+            patch
+              ? summarizePatch(patch)
+              : { id },
+          simulation:
+            summarizeSimulation(result)
+        };
+      });
+
+      return {
+        status: "success",
+        comparison,
+        interpretation_guardrail:
+          "These metrics expose trade-offs. They do not constitute an autonomous recommendation or authorization to publish."
+      };
+    },
+
+    revisePatch: (
+      patchId: string,
+      changes: Partial<PatchConditions>,
+      clearConditions: string[]
+    ) => {
+      const index =
+        patchesRef.current.findIndex(
+          (candidate) => candidate.id === patchId
+        );
+
+      if (index < 0) {
+        return {
+          status: "error",
+          message:
+            `Patch "${patchId}" does not exist. Inspect the workspace or draft candidate patches first.`
+        };
+      }
+
+      const patch = patchesRef.current[index];
+
+      const conditions: PatchConditions = {
+        ...patch.conditions
+      };
+
+      for (const key of clearConditions) {
+        if (
+          key === "urgencyAtLeast" ||
+          key === "evidenceAtLeast" ||
+          key === "vulnerabilityAtLeast" ||
+          key === "potentialHarmAtMost" ||
+          key === "continuityAtLeast"
+        ) {
+          delete conditions[key];
+        }
+      }
+
+      Object.assign(conditions, changes);
+
+      const revised: DecisionPatch = {
+        ...patch,
+        conditions
+      };
+
+      const nextPatches =
+        patchesRef.current.map(
+          (candidate) =>
+            candidate.id === patchId
+              ? revised
+              : candidate
+        );
+
+      replacePatches(nextPatches);
+      selectPatch(patchId);
+
+      const nextSimulations = {
+        ...simulationsRef.current
+      };
+
+      delete nextSimulations[patchId];
+
+      replaceSimulations(nextSimulations);
+
+      return {
+        status: "success",
+        patch: summarizePatch(revised),
+        simulation_status:
+          "STALE_REPLAY_REQUIRED",
+        message:
+          "The shared candidate patch was revised. Its previous simulation was invalidated.",
+        next_step:
+          "Simulate this revised patch before comparing or publishing it."
+      };
+    }
+  };
 
   useEffect(() => {
-    return registerWorkspaceTool(
-      () => workspaceRef.current,
-      setWebmcpAvailable
+    return registerDecisionPatchTools(
+      toolActions,
+      setWebmcpToolCount
     );
   }, []);
 
@@ -61,7 +349,9 @@ export default function App() {
   const c = workspace.observedCase;
 
   const selectedPatch =
-    patches.find((p) => p.id === selectedPatchId) ?? null;
+    patches.find(
+      (patch) => patch.id === selectedPatchId
+    ) ?? null;
 
   const selectedSimulation =
     selectedPatchId
@@ -85,31 +375,37 @@ export default function App() {
         current.humanCorrection.useAsPrecedent
     }));
 
-    setPatches([]);
-    setSimulations({});
-    setSelectedPatchId(null);
+    replacePatches([]);
+    replaceSimulations({});
+    selectPatch(null);
   };
 
   const runSimulation = () => {
-    if (!workspace.precedentRecorded) return;
+    const drafted =
+      toolActions.draftPatches() as {
+        status?: string;
+        patches?: Array<{ id: string }>;
+      };
 
-    const nextPatches =
-      generateCandidatePatches(workspace);
+    if (
+      drafted.status !== "success" ||
+      !drafted.patches?.length
+    ) {
+      return;
+    }
 
-    const nextSimulations =
-      Object.fromEntries(
-        nextPatches.map((patch) => [
-          patch.id,
-          simulatePatch(patch, evaluationSet)
-        ])
-      ) as Record<string, PatchSimulation>;
+    for (const patch of drafted.patches) {
+      toolActions.simulatePatch(patch.id);
+    }
 
-    setPatches(nextPatches);
-    setSimulations(nextSimulations);
-    setSelectedPatchId(
-      nextPatches.find((p) => p.scope === "BALANCED")
-        ?.id ?? nextPatches[0]?.id ?? null
-    );
+    const balanced =
+      patchesRef.current.find(
+        (patch) => patch.scope === "BALANCED"
+      );
+
+    if (balanced) {
+      selectPatch(balanced.id);
+    }
   };
 
   const formatCondition = (
@@ -118,11 +414,17 @@ export default function App() {
   ) => {
     const labels: Record<string, string> = {
       urgencyAtLeast:
-        lang === "ja" ? "緊急度 ≥" : "Urgency ≥",
+        lang === "ja"
+          ? "緊急度 ≥"
+          : "Urgency ≥",
       evidenceAtLeast:
-        lang === "ja" ? "根拠 ≥" : "Evidence ≥",
+        lang === "ja"
+          ? "根拠 ≥"
+          : "Evidence ≥",
       vulnerabilityAtLeast:
-        lang === "ja" ? "脆弱性 ≥" : "Vulnerability ≥",
+        lang === "ja"
+          ? "脆弱性 ≥"
+          : "Vulnerability ≥",
       potentialHarmAtMost:
         lang === "ja"
           ? "潜在的損害 ≤"
@@ -141,21 +443,29 @@ export default function App() {
       <header className="topbar">
         <div className="brand">SOLIFAN</div>
         <div className="divider" />
-        <div className="product">Decision Patch</div>
+        <div className="product">
+          Decision Patch
+        </div>
         <div className="tagline">
           A pull request for agent decisions.
         </div>
 
         <div className="language">
           <button
-            className={lang === "en" ? "active" : ""}
+            className={
+              lang === "en" ? "active" : ""
+            }
             onClick={() => setLang("en")}
           >
             EN
           </button>
+
           <span>/</span>
+
           <button
-            className={lang === "ja" ? "active" : ""}
+            className={
+              lang === "ja" ? "active" : ""
+            }
             onClick={() => setLang("ja")}
           >
             日本語
@@ -175,13 +485,34 @@ export default function App() {
             </div>
 
             <dl className="facts">
-              <div><dt>ID</dt><dd>{c.id}</dd></div>
-              <div><dt>Type</dt><dd>{c.caseType}</dd></div>
-              <div><dt>Urgency</dt><dd>{c.urgency}</dd></div>
-              <div><dt>Evidence</dt><dd>{c.evidenceStrength}</dd></div>
-              <div><dt>Potential harm</dt><dd>{c.potentialHarm}</dd></div>
-              <div><dt>Vulnerability</dt><dd>{c.vulnerability}</dd></div>
-              <div><dt>Continuity</dt><dd>{c.continuityImpact}</dd></div>
+              <div>
+                <dt>ID</dt>
+                <dd>{c.id}</dd>
+              </div>
+              <div>
+                <dt>Type</dt>
+                <dd>{c.caseType}</dd>
+              </div>
+              <div>
+                <dt>Urgency</dt>
+                <dd>{c.urgency}</dd>
+              </div>
+              <div>
+                <dt>Evidence</dt>
+                <dd>{c.evidenceStrength}</dd>
+              </div>
+              <div>
+                <dt>Potential harm</dt>
+                <dd>{c.potentialHarm}</dd>
+              </div>
+              <div>
+                <dt>Vulnerability</dt>
+                <dd>{c.vulnerability}</dd>
+              </div>
+              <div>
+                <dt>Continuity</dt>
+                <dd>{c.continuityImpact}</dd>
+              </div>
             </dl>
           </div>
 
@@ -189,6 +520,7 @@ export default function App() {
             <div className="cardTitle">
               {t.agentBefore}
             </div>
+
             <div className="decision before">
               {workspace.agentDecision}
             </div>
@@ -198,9 +530,13 @@ export default function App() {
             <label>{t.correction}</label>
 
             <select
-              value={workspace.humanCorrection.decision}
+              value={
+                workspace.humanCorrection.decision
+              }
               onChange={(e) =>
-                setDecision(e.target.value as Decision)
+                setDecision(
+                  e.target.value as Decision
+                )
               }
             >
               <option value="APPROVE">
@@ -217,7 +553,9 @@ export default function App() {
             <label>{t.rationale}</label>
 
             <textarea
-              value={workspace.humanCorrection.rationale}
+              value={
+                workspace.humanCorrection.rationale
+              }
               onChange={(e) =>
                 setWorkspace((current) => ({
                   ...current,
@@ -233,14 +571,16 @@ export default function App() {
               <input
                 type="checkbox"
                 checked={
-                  workspace.humanCorrection.useAsPrecedent
+                  workspace.humanCorrection
+                    .useAsPrecedent
                 }
                 onChange={(e) =>
                   setWorkspace((current) => ({
                     ...current,
                     humanCorrection: {
                       ...current.humanCorrection,
-                      useAsPrecedent: e.target.checked
+                      useAsPrecedent:
+                        e.target.checked
                     }
                   }))
                 }
@@ -290,19 +630,28 @@ export default function App() {
                     <span>
                       {workspace.agentDecision}
                     </span>
-                    <span className="arrow">→</span>
+                    <span className="arrow">
+                      →
+                    </span>
                     <strong>
-                      {workspace.humanCorrection.decision}
+                      {
+                        workspace.humanCorrection
+                          .decision
+                      }
                     </strong>
                   </div>
 
                   <p>
-                    {workspace.humanCorrection.rationale}
+                    {
+                      workspace.humanCorrection
+                        .rationale
+                    }
                   </p>
 
                   <div className="honesty">
-                    Observed correction only. No generalized
-                    rule has been published.
+                    Observed correction only. No
+                    generalized rule has been
+                    published.
                   </div>
                 </div>
               )}
@@ -323,7 +672,9 @@ export default function App() {
                     <div className="matrixNote">
                       {t.evaluation}:{" "}
                       <strong>
-                        {selectedSimulation.total}
+                        {
+                          selectedSimulation.total
+                        }
                       </strong>{" "}
                       combinations
                     </div>
@@ -333,28 +684,40 @@ export default function App() {
                     <div>
                       <span>{t.changed}</span>
                       <strong>
-                        {selectedSimulation.changed}
+                        {
+                          selectedSimulation.changed
+                        }
                       </strong>
                     </div>
 
                     <div>
                       <span>{t.aligned}</span>
                       <strong>
-                        {selectedSimulation.aligned}
+                        {
+                          selectedSimulation.aligned
+                        }
                       </strong>
                     </div>
 
                     <div>
-                      <span>{t.counterexamples}</span>
+                      <span>
+                        {t.counterexamples}
+                      </span>
                       <strong className="danger">
-                        {selectedSimulation.counterexamples}
+                        {
+                          selectedSimulation
+                            .counterexamples
+                        }
                       </strong>
                     </div>
 
                     <div>
                       <span>{t.reviews}</span>
                       <strong>
-                        {selectedSimulation.reviewsTransitioned}
+                        {
+                          selectedSimulation
+                            .reviewsTransitioned
+                        }
                       </strong>
                     </div>
                   </div>
@@ -365,8 +728,11 @@ export default function App() {
                     </div>
 
                     {selectedSimulation
-                      .counterexampleCases.length === 0 ? (
-                      <p>{t.noCounterexamples}</p>
+                      .counterexampleCases
+                      .length === 0 ? (
+                      <p>
+                        {t.noCounterexamples}
+                      </p>
                     ) : (
                       selectedSimulation
                         .counterexampleCases
@@ -377,26 +743,37 @@ export default function App() {
                             key={item.id}
                           >
                             <div>
-                              <strong>{item.id}</strong>
+                              <strong>
+                                {item.id}
+                              </strong>
                               <span>
                                 {item.urgency} urgency ·{" "}
-                                {item.evidenceStrength} evidence
+                                {
+                                  item.evidenceStrength
+                                }{" "}
+                                evidence
                               </span>
                             </div>
 
                             <div>
                               <span>
-                                {item.baselineDecision}
+                                {
+                                  item.baselineDecision
+                                }
                               </span>
                               <span>→</span>
                               <strong>
-                                {selectedPatch.outcome}
+                                {
+                                  selectedPatch.outcome
+                                }
                               </strong>
                             </div>
 
                             <small>
                               Synthetic reference:{" "}
-                              {item.referenceDecision}
+                              {
+                                item.referenceDecision
+                              }
                             </small>
                           </div>
                         ))
@@ -404,10 +781,11 @@ export default function App() {
                   </div>
 
                   <div className="honesty">
-                    Counts describe the complete synthetic
-                    combination matrix used for this demo.
-                    They are not estimates of real-world
-                    frequency or business impact.
+                    Counts describe the complete
+                    synthetic combination matrix used
+                    for this demo. They are not
+                    estimates of real-world frequency
+                    or business impact.
                   </div>
                 </div>
               )}
@@ -436,14 +814,18 @@ export default function App() {
                   <button
                     key={patch.id}
                     className={`patchCard ${
-                      selected ? "selected" : ""
+                      selected
+                        ? "selected"
+                        : ""
                     }`}
                     onClick={() =>
-                      setSelectedPatchId(patch.id)
+                      selectPatch(patch.id)
                     }
                   >
                     <div className="patchHeader">
-                      <strong>{patch.scope}</strong>
+                      <strong>
+                        {patch.scope}
+                      </strong>
 
                       {result && (
                         <span>
@@ -456,14 +838,16 @@ export default function App() {
                     <div className="conditions">
                       {Object.entries(
                         patch.conditions
-                      ).map(([key, value]) => (
-                        <span key={key}>
-                          {formatCondition(
-                            key,
-                            String(value)
-                          )}
-                        </span>
-                      ))}
+                      ).map(
+                        ([key, value]) => (
+                          <span key={key}>
+                            {formatCondition(
+                              key,
+                              String(value)
+                            )}
+                          </span>
+                        )
+                      )}
                     </div>
 
                     <div className="patchOutcome">
@@ -477,24 +861,24 @@ export default function App() {
 
           <div className="webmcpCard">
             <div>
-              <strong>{t.webmcp}</strong>
+              <strong>WebMCP tools</strong>
 
               <span
                 className={
-                  webmcpAvailable
+                  webmcpToolCount > 0
                     ? "status available"
                     : "status unavailable"
                 }
               >
-                {webmcpAvailable
-                  ? "LIVE"
+                {webmcpToolCount > 0
+                  ? `${webmcpToolCount} LIVE`
                   : "NOT DETECTED"}
               </span>
             </div>
 
             <p>
-              {webmcpAvailable
-                ? t.available
+              {webmcpToolCount > 0
+                ? "The agent can inspect, draft, simulate, compare, and revise this shared workspace."
                 : t.unavailable}
             </p>
           </div>
@@ -503,8 +887,10 @@ export default function App() {
 
       <footer>
         <div className="lime">
-          Every correction is a lesson.<br />
-          Every lesson can improve the next decision.
+          Every correction is a lesson.
+          <br />
+          Every lesson can improve the next
+          decision.
         </div>
 
         <div className="navy">
