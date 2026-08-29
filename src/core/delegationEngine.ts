@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   AgentChallenge,
   ConditionOperator,
   DecisionCondition,
@@ -230,65 +230,279 @@ export function evaluateBoundary(
   return revision.boundary.defaultOutcome;
 }
 
-export function checkGuardrails(
+const MAX_INVARIANT_STATES =
+  10000;
+
+interface FiniteDecisionDomain {
+  complete: boolean;
+  states: DecisionFacts[];
+}
+
+function finiteValuesForFactor(
+  factor: FactorDefinition
+): FactorValue[] | null {
+  switch (factor.type) {
+    case "BOOLEAN":
+      return [
+        false,
+        true
+      ];
+
+    case "ORDERED":
+      return (
+        factor.orderedValues &&
+        factor.orderedValues.length > 0
+      )
+        ? [...factor.orderedValues]
+        : null;
+
+    case "CATEGORY":
+      return (
+        factor.categories &&
+        factor.categories.length > 0
+      )
+        ? [...factor.categories]
+        : null;
+
+    /*
+     * An unconstrained number has an infinite state space.
+     * It cannot be claimed as exhaustively verified.
+     */
+    case "NUMBER":
+      return null;
+
+    default:
+      return null;
+  }
+}
+
+function buildFiniteDecisionDomain(
+  factors: FactorDefinition[]
+): FiniteDecisionDomain {
+  const definitions:
+    Array<{
+      id: string;
+      values: FactorValue[];
+    }> = [];
+
+  let estimatedStates =
+    1;
+
+  for (const factor of factors) {
+    const values =
+      finiteValuesForFactor(
+        factor
+      );
+
+    if (
+      !values ||
+      values.length === 0
+    ) {
+      return {
+        complete: false,
+        states: []
+      };
+    }
+
+    estimatedStates *=
+      values.length;
+
+    /*
+     * Refuse combinatorial explosion rather than pretending
+     * an incomplete sample is exhaustive verification.
+     */
+    if (
+      estimatedStates >
+      MAX_INVARIANT_STATES
+    ) {
+      return {
+        complete: false,
+        states: []
+      };
+    }
+
+    definitions.push({
+      id: factor.id,
+      values
+    });
+  }
+
+  let states:
+    DecisionFacts[] = [
+      {}
+    ];
+
+  for (
+    const definition of
+    definitions
+  ) {
+    const next:
+      DecisionFacts[] = [];
+
+    for (const state of states) {
+      for (
+        const value of
+        definition.values
+      ) {
+        next.push({
+          ...state,
+          [definition.id]:
+            value
+        });
+      }
+    }
+
+    states = next;
+  }
+
+  return {
+    complete: true,
+    states
+  };
+}
+
+interface GuardrailInvariantVerification {
+  results: GuardrailCheckResult[];
+  complete: boolean;
+  statesChecked: number;
+  guardrailsChecked: number;
+}
+
+export function verifyGuardrailInvariants(
   revision: DelegationRevision,
   factors: FactorDefinition[]
-): GuardrailCheckResult[] {
+): GuardrailInvariantVerification {
+  const domain =
+    buildFiniteDecisionDomain(
+      factors
+    );
+
+  if (!domain.complete) {
+    return {
+      results: [],
+      complete: false,
+      statesChecked: 0,
+      guardrailsChecked: 0
+    };
+  }
+
   const results:
     GuardrailCheckResult[] = [];
 
-  for (const guardrail of revision.guardrails) {
+  for (
+    const guardrail of
+    revision.guardrails
+  ) {
+    const applicable =
+      domain.states.filter(
+        (scenario) =>
+          conditionsMatch(
+            scenario,
+            guardrail.when,
+            factors
+          )
+      );
+
     /*
-     * Guardrails are checked against known decisions and
-     * challenge scenarios that actually satisfy the guardrail.
-     *
-     * This intentionally avoids pretending that an arbitrary
-     * synthetic matrix is ground truth.
+     * An impossible Guardrail condition cannot provide
+     * meaningful protection and therefore is not treated
+     * as successfully verified.
      */
-    const scenarios: DecisionFacts[] = [
-      ...revision.knownDecisions.map(
-        (item) => item.facts
-      ),
-      ...revision.challenges.map(
-        (item) => item.scenario
-      )
-    ];
+    if (
+      applicable.length === 0
+    ) {
+      return {
+        results,
+        complete: false,
+        statesChecked:
+          domain.states.length,
+        guardrailsChecked:
+          results.length
+      };
+    }
 
-    for (const scenario of scenarios) {
-      if (
-        !conditionsMatch(
-          scenario,
-          guardrail.when,
-          factors
-        )
-      ) {
-        continue;
-      }
+    let witnessFacts =
+      applicable[0];
 
-      const actualOutcome =
+    let worstOutcome =
+      evaluateBoundary(
+        revision,
+        witnessFacts,
+        factors
+      );
+
+    for (
+      const scenario of applicable
+    ) {
+      const outcome =
         evaluateBoundary(
           revision,
           scenario,
           factors
         );
 
-      results.push({
-        guardrailId: guardrail.id,
-        actualOutcome,
-        requiredOutcome:
-          guardrail.requiredOutcome,
-        violated:
-          outcomeStrength[actualOutcome] <
-          outcomeStrength[
-            guardrail.requiredOutcome
-          ]
-      });
+      /*
+       * Lower strength means more Agent authority.
+       * We preserve the least restrictive outcome found.
+       */
+      if (
+        outcomeStrength[outcome] <
+        outcomeStrength[
+          worstOutcome
+        ]
+      ) {
+        worstOutcome =
+          outcome;
+
+        witnessFacts =
+          scenario;
+      }
     }
+
+    results.push({
+      guardrailId:
+        guardrail.id,
+
+      actualOutcome:
+        worstOutcome,
+
+      requiredOutcome:
+        guardrail.requiredOutcome,
+
+      violated:
+        outcomeStrength[
+          worstOutcome
+        ] <
+        outcomeStrength[
+          guardrail.requiredOutcome
+        ],
+
+      witnessFacts:
+        deepClone(
+          witnessFacts
+        )
+    });
   }
 
-  return results;
+  return {
+    results,
+    complete: true,
+    statesChecked:
+      domain.states.length,
+    guardrailsChecked:
+      revision.guardrails.length
+  };
 }
 
+export function checkGuardrails(
+  revision: DelegationRevision,
+  factors: FactorDefinition[]
+): GuardrailCheckResult[] {
+  return verifyGuardrailInvariants(
+    revision,
+    factors
+  ).results;
+}
 export function checkRegressions(
   revision: DelegationRevision,
   factors: FactorDefinition[]
@@ -321,11 +535,15 @@ export function reviewRevision(
   reviewedAt =
     new Date().toISOString()
 ): DelegationRevision {
-  const guardrails =
-    checkGuardrails(
+  const guardrailVerification =
+    verifyGuardrailInvariants(
       revision,
       factors
     );
+
+  const guardrails =
+    guardrailVerification
+      .results;
 
   const regressions =
     checkRegressions(
@@ -358,6 +576,19 @@ export function reviewRevision(
 
   const review: RevisionReview = {
     guardrails,
+
+    guardrailVerificationComplete:
+      guardrailVerification
+        .complete,
+
+    guardrailStatesChecked:
+      guardrailVerification
+        .statesChecked,
+
+    guardrailsChecked:
+      guardrailVerification
+        .guardrailsChecked,
+
     regressions,
     challengeCount,
     challengeSatisfied,
@@ -376,9 +607,12 @@ export function reviewRevision(
   const status =
     blocked
       ? "BLOCKED"
-      : !challengeSatisfied
+      : !guardrailVerification
+          .complete
         ? "NEEDS_REVIEW"
-        : "READY_FOR_DECISION";
+        : !challengeSatisfied
+          ? "NEEDS_REVIEW"
+          : "READY_FOR_DECISION";
 
   return {
     ...deepClone(revision),

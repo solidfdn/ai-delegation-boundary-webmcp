@@ -912,10 +912,13 @@ createDelegationBoundaryToolActions(
               ? "The proposed authority change conflicts with a guardrail or a previously confirmed human decision."
               : reviewed.status ===
                 "NEEDS_REVIEW"
-                ? reviewed.challenges.length === 0
-                  ? "This boundary has not yet been challenged. At least one complete agent challenge is required before it can become READY_FOR_DECISION."
-                  : "No deterministic blocker was found, but one or more agent challenges still require human judgment."
-                : "Configured checks are complete. This does not mean the revision is automatically safe; it is ready for a human decision."
+                ? !reviewed.review
+                    ?.guardrailVerificationComplete
+                  ? "Guardrail invariants could not be exhaustively verified for this decision domain. This revision cannot become READY_FOR_DECISION."
+                  : reviewed.challenges.length === 0
+                    ? "This boundary has not yet been challenged. At least one complete agent challenge is required before it can become READY_FOR_DECISION."
+                    : "No deterministic blocker was found, but one or more agent challenges still require human judgment."
+                : "Guardrail invariants, known-decision regressions, and the challenge gate are complete. This is still not human approval."
         };
       } catch (error) {
         return {

@@ -649,7 +649,7 @@ createDelegationToolDefinitions(
         "Review the current delegation revision",
 
       description:
-        "Run deterministic guardrail and known-decision regression checks, then verify the Agent Challenge gate. A revision with zero challenges or any unresolved challenge remains NEEDS_REVIEW. READY_FOR_DECISION is never human approval.",
+        "Verify Guardrails as deterministic invariants across the complete finite decision domain, run known-decision regression checks, then verify the Agent Challenge gate. An Agent cannot evade a Guardrail by omitting a dangerous scenario from its Challenges. A revision with incomplete invariant verification, zero challenges, or any unresolved challenge cannot become READY_FOR_DECISION. READY_FOR_DECISION is never human approval.",
 
       inputSchema: {
         type: "object",

@@ -199,11 +199,25 @@ export interface AgentChallenge {
 
 export interface GuardrailCheckResult {
   guardrailId: string;
+
+  /**
+   * Least restrictive outcome found anywhere in the
+   * exhaustively verified finite decision domain.
+   */
   actualOutcome: DelegationOutcome;
+
   requiredOutcome:
     | "HUMAN_REVIEW"
     | "DO_NOT_DELEGATE";
+
   violated: boolean;
+
+  /**
+   * Concrete counterexample for the least-restrictive
+   * outcome found. This is a deterministic witness,
+   * not synthetic ground truth.
+   */
+  witnessFacts?: DecisionFacts;
 }
 
 export interface RegressionCheckResult {
@@ -215,6 +229,18 @@ export interface RegressionCheckResult {
 
 export interface RevisionReview {
   guardrails: GuardrailCheckResult[];
+
+  /**
+   * Guardrails are verified as invariants across the
+   * complete finite decision domain.
+   *
+   * If the domain cannot be verified exhaustively,
+   * the revision cannot become READY_FOR_DECISION.
+   */
+  guardrailVerificationComplete: boolean;
+  guardrailStatesChecked: number;
+  guardrailsChecked: number;
+
   regressions: RegressionCheckResult[];
 
   /**
