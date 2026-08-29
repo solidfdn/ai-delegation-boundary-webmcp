@@ -708,3 +708,59 @@ export async function applyApprovedRevision(
     }
   };
 }
+
+/**
+ * Create a new immutable revision from the current state,
+ * apply one explicit edit, and invalidate any prior review
+ * or human approval.
+ *
+ * Past revisions remain available as history.
+ */
+export function createEditedRevision(
+  workspace: DelegationWorkspace,
+  createdBy: RevisionActor,
+  changeSummary: string,
+  edit: (
+    revision: DelegationRevision
+  ) => void,
+  createdAt =
+    new Date().toISOString()
+): DelegationWorkspace {
+  const nextWorkspace =
+    createRevision(
+      workspace,
+      createdBy,
+      changeSummary,
+      createdAt
+    );
+
+  const current =
+    getCurrentRevision(
+      nextWorkspace
+    );
+
+  const edited =
+    deepClone(current);
+
+  edit(edited);
+
+  /*
+   * Any edit makes prior review stale.
+   */
+  edited.review = undefined;
+  edited.status = "DRAFT";
+
+  return {
+    ...nextWorkspace,
+
+    revisions:
+      nextWorkspace.revisions.map(
+        (revision) =>
+          revision.id === edited.id
+            ? edited
+            : revision
+      ),
+
+    approval: undefined
+  };
+}
