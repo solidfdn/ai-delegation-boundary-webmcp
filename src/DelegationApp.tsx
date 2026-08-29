@@ -414,7 +414,7 @@ export default function DelegationApp() {
 
   const displayValue = (
     value: unknown
-  ) => {
+  ): string => {
     if (
       Array.isArray(value)
     ) {
@@ -1606,3 +1606,4 @@ export default function DelegationApp() {
     </div>
   );
 }
+

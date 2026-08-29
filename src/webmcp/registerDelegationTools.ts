@@ -730,7 +730,9 @@ createApplyApprovedRevisionToolDefinition(
     },
 
     execute:
-      async () =>
+      async (
+        _input: Record<string, unknown>
+      ) =>
         actions
           .applyApprovedRevision()
   };
@@ -858,3 +860,4 @@ registerApplyApprovedRevisionTool(
   return () =>
     controller.abort();
 }
+
