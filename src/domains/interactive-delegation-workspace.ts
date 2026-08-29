@@ -34,11 +34,22 @@ createInteractiveDelegationWorkspace():
   }
 
   /*
-   * P1 contains fixed challenges for deterministic tests.
-   * The interactive Challenge product starts without them
-   * so the real agent can challenge a live proposed change.
+   * P1 keeps deterministic fixtures for automated tests.
+   *
+   * The public product must not pretend that the current user
+   * already made judgments they never made.
+   *
+   * Known Decisions are earned only through real human
+   * resolutions during this workspace.
+   */
+  current.knownDecisions = [];
+
+  /*
+   * Agent Challenges are also created live.
+   * A challenge belongs to the exact boundary it tested.
    */
   current.challenges = [];
+
   current.review = undefined;
   current.status = "DRAFT";
 

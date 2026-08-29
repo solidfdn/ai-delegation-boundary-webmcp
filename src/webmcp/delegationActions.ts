@@ -1,5 +1,6 @@
-﻿import {
+import {
   applyApprovedRevision,
+  createBoundaryRevision,
   createEditedRevision,
   getCurrentRevision,
   reviewRevision
@@ -261,6 +262,24 @@ function validateScenario(
       )
     );
 
+  /*
+   * A Challenge must describe one concrete decision case.
+   * Partial scenarios can accidentally fall through to the
+   * default outcome and create misleading assurance.
+   */
+  for (const factor of factors) {
+    if (
+      !Object.prototype.hasOwnProperty.call(
+        scenario,
+        factor.id
+      )
+    ) {
+      return (
+        `Challenge scenario must include factor "${factor.id}".`
+      );
+    }
+  }
+
   for (
     const [key, value] of
     Object.entries(scenario)
@@ -272,7 +291,9 @@ function validateScenario(
     }
 
     if (value === null) {
-      continue;
+      return (
+        `Challenge scenario factor "${key}" must have a concrete value.`
+      );
     }
 
     const factor =
@@ -295,6 +316,21 @@ function validateScenario(
   }
 
   return null;
+}
+
+function scenarioKey(
+  scenario: DecisionFacts
+): string {
+  return JSON.stringify(
+    Object.keys(scenario)
+      .sort()
+      .map(
+        (key) => [
+          key,
+          scenario[key]
+        ]
+      )
+  );
 }
 
 function buildRule(
@@ -502,7 +538,7 @@ createDelegationBoundaryToolActions(
           }
 
           const next =
-            createEditedRevision(
+            createBoundaryRevision(
               workspace,
               "AGENT",
               input.changeSummary,
@@ -540,7 +576,7 @@ createDelegationBoundaryToolActions(
               null,
 
             next_step:
-              "Review this revision for guardrail violations, regressions, and unresolved challenges."
+              "Before review, you MUST challenge this new boundary with at least one complete concrete scenario using challenge_boundary_revision."
           };
         }
 
@@ -560,7 +596,7 @@ createDelegationBoundaryToolActions(
           );
 
         const next =
-          createEditedRevision(
+            createBoundaryRevision(
             workspace,
             "AGENT",
             input.changeSummary,
@@ -616,7 +652,7 @@ createDelegationBoundaryToolActions(
             null,
 
           next_step:
-            "Review this revision and challenge it before any human approval."
+            "Before review, you MUST challenge this new boundary with at least one complete concrete scenario using challenge_boundary_revision."
         };
       } catch (error) {
         return {
@@ -647,6 +683,30 @@ createDelegationBoundaryToolActions(
             status: "error",
             message:
               scenarioError
+          };
+        }
+
+        const current =
+          getCurrentRevision(
+            workspace
+          );
+
+        const duplicate =
+          current.challenges.some(
+            (challenge) =>
+              scenarioKey(
+                challenge.scenario
+              ) ===
+              scenarioKey(
+                input.scenario
+              )
+          );
+
+        if (duplicate) {
+          return {
+            status: "error",
+            message:
+              "This exact challenge scenario already exists for the current boundary."
           };
         }
 
@@ -797,7 +857,9 @@ createDelegationBoundaryToolActions(
               ? "The proposed authority change conflicts with a guardrail or a previously confirmed human decision."
               : reviewed.status ===
                 "NEEDS_REVIEW"
-                ? "No deterministic blocker was found, but one or more agent challenges still require human judgment."
+                ? reviewed.challenges.length === 0
+                  ? "This boundary has not yet been challenged. At least one complete agent challenge is required before it can become READY_FOR_DECISION."
+                  : "No deterministic blocker was found, but one or more agent challenges still require human judgment."
                 : "Configured checks are complete. This does not mean the revision is automatically safe; it is ready for a human decision."
         };
       } catch (error) {

@@ -1,4 +1,4 @@
-﻿export type Decision = "APPROVE" | "HUMAN_REVIEW" | "DECLINE";
+export type Decision = "APPROVE" | "HUMAN_REVIEW" | "DECLINE";
 export type Level = "LOW" | "MEDIUM" | "HIGH";
 export type EvidenceLevel = "WEAK" | "PARTIAL" | "STRONG";
 
@@ -216,6 +216,16 @@ export interface RegressionCheckResult {
 export interface RevisionReview {
   guardrails: GuardrailCheckResult[];
   regressions: RegressionCheckResult[];
+
+  /**
+   * A revision must be actively challenged before it can
+   * become READY_FOR_DECISION.
+   *
+   * Zero challenges is not evidence of safety.
+   */
+  challengeCount: number;
+  challengeSatisfied: boolean;
+
   unresolvedChallengeIds: string[];
   reviewedAt: string;
 }
@@ -296,4 +306,3 @@ export interface DelegationWorkspace {
    */
   application?: RevisionApplication;
 }
-

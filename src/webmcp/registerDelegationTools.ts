@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   DecisionCondition,
   DecisionFacts,
   DelegationOutcome,
@@ -278,7 +278,7 @@ createDelegationToolDefinitions(
         "Propose a delegation boundary revision",
 
       description:
-        "Create a new candidate revision by adding, changing, or removing one boundary rule. This can change proposed agent authority, but it cannot alter guardrails, known human decisions, create human approval, or apply the revision.",
+        "Create a new candidate revision by adding, changing, or removing one boundary rule. Any prior Agent Challenges become stale and are removed from the new current revision. You must challenge the new boundary again before review. This tool cannot alter guardrails, known human decisions, create human approval, or apply the revision.",
 
       inputSchema: {
         type: "object",
@@ -524,7 +524,7 @@ createDelegationToolDefinitions(
         "Challenge the current delegation boundary",
 
       description:
-        "Add a concrete boundary or exception scenario that could make the current delegation revision unsafe, ambiguous, or over-broad. A challenge is not ground truth; it creates an explicit question for human judgment.",
+        "Add one complete, concrete decision scenario that could make the current delegation revision unsafe, ambiguous, or over-broad. Include every workspace factor. A challenge is not ground truth and cannot resolve itself; it creates an explicit question for human judgment.",
 
       inputSchema: {
         type: "object",
@@ -649,7 +649,7 @@ createDelegationToolDefinitions(
         "Review the current delegation revision",
 
       description:
-        "Run deterministic guardrail and known-decision regression checks, then report unresolved agent challenges. This tool may mark a revision BLOCKED, NEEDS_REVIEW, or READY_FOR_DECISION. READY_FOR_DECISION is not human approval.",
+        "Run deterministic guardrail and known-decision regression checks, then verify the Agent Challenge gate. A revision with zero challenges or any unresolved challenge remains NEEDS_REVIEW. READY_FOR_DECISION is never human approval.",
 
       inputSchema: {
         type: "object",
@@ -860,4 +860,3 @@ registerApplyApprovedRevisionTool(
   return () =>
     controller.abort();
 }
-

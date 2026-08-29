@@ -344,9 +344,23 @@ export function reviewRevision(
           challenge.id
       );
 
+  const challengeCount =
+    revision.challenges.length;
+
+  /*
+   * No challenge is not a clean result.
+   * The revision must first be actively challenged,
+   * and every raised challenge must be resolved by a human.
+   */
+  const challengeSatisfied =
+    challengeCount > 0 &&
+    unresolvedChallengeIds.length === 0;
+
   const review: RevisionReview = {
     guardrails,
     regressions,
+    challengeCount,
+    challengeSatisfied,
     unresolvedChallengeIds,
     reviewedAt
   };
@@ -362,7 +376,7 @@ export function reviewRevision(
   const status =
     blocked
       ? "BLOCKED"
-      : unresolvedChallengeIds.length > 0
+      : !challengeSatisfied
         ? "NEEDS_REVIEW"
         : "READY_FOR_DECISION";
 
@@ -758,6 +772,64 @@ export function createEditedRevision(
         (revision) =>
           revision.id === edited.id
             ? edited
+            : revision
+      ),
+
+    approval: undefined
+  };
+}
+
+
+/**
+ * Create a revision whose delegation boundary has changed.
+ *
+ * Guardrails and Known Decisions remain durable.
+ * Agent Challenges do not.
+ *
+ * A challenge tested the previous boundary state. Reusing it
+ * after the boundary changes would create false assurance.
+ */
+export function createBoundaryRevision(
+  workspace: DelegationWorkspace,
+  createdBy: RevisionActor,
+  changeSummary: string,
+  edit: (
+    revision: DelegationRevision
+  ) => void,
+  createdAt =
+    new Date().toISOString()
+): DelegationWorkspace {
+  const next =
+    createEditedRevision(
+      workspace,
+      createdBy,
+      changeSummary,
+      edit,
+      createdAt
+    );
+
+  const current =
+    getCurrentRevision(next);
+
+  const reset =
+    deepClone(current);
+
+  /*
+   * Preserve history in the superseded revision,
+   * but make the new current boundary prove itself again.
+   */
+  reset.challenges = [];
+  reset.review = undefined;
+  reset.status = "DRAFT";
+
+  return {
+    ...next,
+
+    revisions:
+      next.revisions.map(
+        (revision) =>
+          revision.id === reset.id
+            ? reset
             : revision
       ),
 

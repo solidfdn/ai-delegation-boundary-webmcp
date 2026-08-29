@@ -1,4 +1,4 @@
-﻿import {
+import {
   describe,
   expect,
   it
@@ -402,7 +402,7 @@ describe(
 
             scenario: {
               evidence_quality:
-                "HIGH",
+                "MEDIUM",
 
               impact:
                 "LOW",
@@ -418,7 +418,7 @@ describe(
             },
 
             why_it_matters:
-              "Low operational risk does not necessarily make an exceptional case routine.",
+              "An exceptional case with only medium-quality evidence may still require human judgment even when operational impact is low.",
 
             suggested_outcome:
               "HUMAN_REVIEW"

@@ -1,4 +1,5 @@
-﻿import {
+import {
+  createBoundaryRevision,
   createEditedRevision,
   getCurrentRevision
 } from "./delegationEngine";
@@ -214,7 +215,7 @@ editBoundaryConditionAsHuman(
   const before =
     condition.value;
 
-  return createEditedRevision(
+  return createBoundaryRevision(
     workspace,
     "HUMAN",
 
