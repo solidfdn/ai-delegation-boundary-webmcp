@@ -369,6 +369,12 @@ export default function DelegationApp() {
         "OPEN"
     );
 
+  const nextOpenChallengeId =
+    openChallenges.length > 0
+      ? openChallenges[
+          openChallenges.length - 1
+        ].id
+      : undefined;
   const guardrailViolations =
     current.review?.guardrails.filter(
       (result) =>
@@ -413,9 +419,10 @@ export default function DelegationApp() {
       return {
         key: "scope",
         owner: "NEXT · HUMAN",
-        title: "Scope the work",
+        action: "Start with this work",
         detail:
-          "Define the work before the Agent can change authority."
+          "Define the work before the Agent can change authority.",
+        targetId: "next-task"
       };
     }
 
@@ -423,9 +430,11 @@ export default function DelegationApp() {
       return {
         key: "complete",
         owner: "COMPLETE",
-        title: "Approved boundary applied",
+        action:
+          `Revision ${current.version} applied`,
         detail:
-          "The exact human-approved revision is now active."
+          "The exact human-approved revision is now active.",
+        targetId: "next-complete"
       };
     }
 
@@ -433,19 +442,26 @@ export default function DelegationApp() {
       return {
         key: "apply",
         owner: "NEXT · AGENT",
-        title: "Apply the exact approved revision",
+        action:
+          "Ask Agent: apply_approved_revision",
         detail:
-          "Human approval has unlocked the sixth WebMCP capability."
+          "Human approval unlocked the sixth WebMCP capability.",
+        targetId: "next-agent"
       };
     }
 
-    if (current.status === "READY_FOR_DECISION") {
+    if (
+      current.status ===
+      "READY_FOR_DECISION"
+    ) {
       return {
         key: "approve",
         owner: "NEXT · HUMAN",
-        title: "Decide on this exact revision",
+        action:
+          `Approve revision ${current.version}`,
         detail:
-          "Checks are complete. Final authority remains human."
+          "Checks are complete. This exact revision requires human approval.",
+        targetId: "next-approve"
       };
     }
 
@@ -453,9 +469,11 @@ export default function DelegationApp() {
       return {
         key: "boundary",
         owner: "NEXT · HUMAN",
-        title: "Adjust the delegation boundary",
+        action:
+          "Adjust the highlighted boundary condition",
         detail:
-          "Resolve the conflict, then require a fresh Agent Challenge."
+          "The current authority conflicts with a Guardrail or Known Decision.",
+        targetId: "next-boundary"
       };
     }
 
@@ -463,30 +481,62 @@ export default function DelegationApp() {
       return {
         key: "decision",
         owner: "NEXT · HUMAN",
-        title: "Resolve the open Agent Challenge",
+        action:
+          "Choose one Human Decision outcome",
         detail:
-          "Choose the judgment that should protect future revisions."
+          "Allow agent-only · Keep human review · Do not delegate",
+        targetId: "next-challenge"
       };
     }
 
-    if (current.challenges.length === 0) {
+    if (
+      current.challenges.length === 0
+    ) {
       return {
         key: "agent",
         owner: "NEXT · AGENT",
-        title: "Propose and challenge the boundary",
+        action:
+          "Ask Agent to propose & challenge",
         detail:
-          "Change one rule, then try to break that exact revision."
+          "Change one rule, then challenge that exact new boundary.",
+        targetId: "next-agent"
       };
     }
 
     return {
       key: "review",
-      owner: "NEXT · AGENT",
-      title: "Re-run boundary checks",
+      owner: "NEXT · HUMAN",
+      action:
+        "Run guardrail & regression checks",
       detail:
-        "Verify Guardrails and Known Decisions before human approval."
+        "Re-check the exact revision before human approval.",
+      targetId: "next-review"
     };
   })();
+
+  const showNextStep = () => {
+    const target =
+      document.getElementById(
+        nextCue.targetId
+      );
+
+    if (!target) {
+      return;
+    }
+
+    const reduceMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+    target.scrollIntoView({
+      behavior:
+        reduceMotion
+          ? "auto"
+          : "smooth",
+      block: "center"
+    });
+  };
   const factorLabel = (
     factorId: string
   ) => {
@@ -894,12 +944,26 @@ export default function DelegationApp() {
         </span>
 
         <strong>
-          {nextCue.title}
+          {nextCue.action}
         </strong>
 
         <small>
           {nextCue.detail}
         </small>
+
+        {nextCue.key !==
+          "complete" && (
+          <button
+            className="adb-next-cue-action"
+            type="button"
+            onClick={showNextStep}
+          >
+            Show next step
+            <span aria-hidden="true">
+              →
+            </span>
+          </button>
+        )}
       </div>
       {message && (
         <div className="adb-message">
@@ -928,6 +992,7 @@ export default function DelegationApp() {
           </div>
 
           <div
+            id="next-task"
             className={`adb-task-card ${
               taskConfigured
                 ? "is-scoped"
@@ -1056,7 +1121,10 @@ export default function DelegationApp() {
             </p>
           </div>
 
-          <div className="adb-rules">
+          <div
+            id="next-boundary"
+            className="adb-rules"
+          >
             {[...current.boundary.rules]
               .sort(
                 (a, b) =>
@@ -1535,6 +1603,12 @@ export default function DelegationApp() {
                   ) => (
                     <article
                       className={`adb-challenge ${challenge.status.toLowerCase()}`}
+                      id={
+                        challenge.id ===
+                        nextOpenChallengeId
+                          ? "next-challenge"
+                          : undefined
+                      }
                       key={
                         challenge.id
                       }
@@ -1656,6 +1730,7 @@ export default function DelegationApp() {
               current.status !==
                 "APPLIED" && (
                 <button
+                  id="next-review"
                   className="adb-check-button"
                   type="button"
                   disabled={
@@ -1674,6 +1749,7 @@ export default function DelegationApp() {
             {current.status ===
               "READY_FOR_DECISION" && (
               <button
+                id="next-approve"
                 className="adb-approve-button"
                 type="button"
                 onClick={
@@ -1722,7 +1798,10 @@ export default function DelegationApp() {
 
             {current.status ===
               "APPLIED" && (
-              <div className="adb-applied-card">
+              <div
+                id="next-complete"
+                className="adb-applied-card"
+              >
                 <span>
                   APPLIED
                 </span>
@@ -1833,7 +1912,10 @@ export default function DelegationApp() {
               )}
           </div>
 
-          <div className="adb-agent-card">
+          <div
+            id="next-agent"
+            className="adb-agent-card"
+          >
             <div className="adb-agent-card-head">
               <div>
                 <span className="adb-card-label">

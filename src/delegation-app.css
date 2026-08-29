@@ -1954,3 +1954,131 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+/* ==========================================================
+   SOLIFAN WAYFINDING V2
+   Exact action. Exact place. Quiet assistance.
+   ========================================================== */
+
+.adb-next-cue {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+
+  grid-template-columns:
+    auto auto auto minmax(0, 1fr) auto;
+
+  background:
+    rgba(250, 252, 254, .96);
+
+  backdrop-filter: blur(8px);
+
+  box-shadow:
+    0 8px 20px
+    rgba(11, 29, 53, .025);
+}
+
+.adb-next-cue-action {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+
+  min-height: 32px;
+
+  padding: 0;
+
+  border: 0;
+  border-bottom:
+    1px solid
+    rgba(120, 148, 178, .55);
+
+  background: transparent;
+
+  color: var(--ink);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.adb-next-cue-action:hover,
+.adb-next-cue-action:focus-visible {
+  border-bottom-color:
+    var(--ink);
+}
+
+#next-task,
+#next-boundary,
+#next-challenge,
+#next-review,
+#next-approve,
+#next-agent,
+#next-complete {
+  scroll-margin-top: 82px;
+}
+
+.adb-app[data-next="scope"]
+#next-task,
+
+.adb-app[data-next="boundary"]
+#next-boundary,
+
+.adb-app[data-next="decision"]
+#next-challenge,
+
+.adb-app[data-next="agent"]
+#next-agent,
+
+.adb-app[data-next="apply"]
+#next-agent {
+  outline:
+    1px solid
+    rgba(120, 148, 178, .72);
+
+  outline-offset: 4px;
+}
+
+.adb-app[data-next="review"]
+#next-review,
+
+.adb-app[data-next="approve"]
+#next-approve {
+  border-color:
+    var(--guide);
+
+  background:
+    var(--guide-soft);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(120, 148, 178, .10);
+}
+
+@media (max-width: 800px) {
+  .adb-next-cue {
+    grid-template-columns:
+      auto auto 1fr auto;
+  }
+
+  .adb-next-cue small {
+    grid-column: 2 / 4;
+  }
+}
+
+@media (max-width: 560px) {
+  .adb-next-cue {
+    grid-template-columns:
+      auto 1fr;
+  }
+
+  .adb-next-cue-owner,
+  .adb-next-cue strong,
+  .adb-next-cue small {
+    grid-column: 2;
+  }
+
+  .adb-next-cue-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
