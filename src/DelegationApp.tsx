@@ -287,6 +287,10 @@ export default function DelegationApp() {
     setTaskContextDraft
   ] = useState("");
 
+  const [
+    nextTargetOffscreen,
+    setNextTargetOffscreen
+  ] = useState(false);
   const workspaceRef =
     useRef(workspace);
 
@@ -537,6 +541,88 @@ export default function DelegationApp() {
       block: "center"
     });
   };
+  /* CONTEXTUAL_WAYFINDING_VISIBILITY */
+  useEffect(() => {
+    const target =
+      document.getElementById(
+        nextCue.targetId
+      );
+
+    if (
+      !target ||
+      nextCue.key === "complete"
+    ) {
+      setNextTargetOffscreen(
+        false
+      );
+
+      return;
+    }
+
+    const measure = () => {
+      const rect =
+        target.getBoundingClientRect();
+
+      /*
+       * The sticky guidance bar occupies roughly
+       * the first 58px when pinned.
+       *
+       * "Visible" intentionally means any meaningful
+       * portion of the target is already available
+       * to the user.
+       */
+      const visible =
+        rect.bottom > 58 &&
+        rect.top <
+          window.innerHeight &&
+        rect.right > 0 &&
+        rect.left <
+          window.innerWidth;
+
+      setNextTargetOffscreen(
+        !visible
+      );
+    };
+
+    measure();
+
+    const observer =
+      typeof IntersectionObserver !==
+      "undefined"
+        ? new IntersectionObserver(
+            ([entry]) => {
+              setNextTargetOffscreen(
+                !entry.isIntersecting
+              );
+            },
+            {
+              root: null,
+              rootMargin:
+                "-58px 0px 0px 0px",
+              threshold: 0.01
+            }
+          )
+        : undefined;
+
+    observer?.observe(target);
+
+    window.addEventListener(
+      "resize",
+      measure
+    );
+
+    return () => {
+      observer?.disconnect();
+
+      window.removeEventListener(
+        "resize",
+        measure
+      );
+    };
+  }, [
+    nextCue.key,
+    nextCue.targetId
+  ]);
   const factorLabel = (
     factorId: string
   ) => {
@@ -958,7 +1044,8 @@ export default function DelegationApp() {
         </small>
 
         {nextCue.key !==
-          "complete" && (
+          "complete" &&
+          nextTargetOffscreen && (
           <button
             className="adb-next-cue-action"
             type="button"
