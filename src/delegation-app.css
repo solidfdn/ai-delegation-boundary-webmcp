@@ -1654,3 +1654,8 @@ select:focus-visible {
       1px solid var(--line);
   }
 }
+
+/* CHALLENGE SUBMISSION: ENGLISH-ONLY UI */
+.adb-lang {
+  display: none;
+}
