@@ -972,3 +972,512 @@ textarea:focus-visible {
     display: none;
   }
 }
+
+/* ── Initial value experience ─────────────────────────── */
+
+.emptyExperience {
+  border-top: 1px solid var(--dp-line);
+  padding: 34px 2px 10px;
+}
+
+.emptyExperienceLead {
+  max-width: 680px;
+}
+
+.emptyExperienceLead h2 {
+  max-width: 610px;
+  margin: 8px 0 10px;
+  color: var(--dp-ink);
+  font-family: var(--dp-display);
+  font-size: clamp(24px, 2.1vw, 34px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+}
+
+.emptyExperienceLead p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--dp-muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.valueFlow {
+  position: relative;
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 48px;
+  border-top: 1px solid var(--dp-line-strong);
+}
+
+.flowStep {
+  position: relative;
+  min-height: 116px;
+  padding: 20px 20px 14px 0;
+}
+
+.flowStep::before {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--dp-line-strong);
+  border-radius: 50%;
+  background: #fff;
+  content: "";
+}
+
+.flowStep.current::before {
+  border-color: var(--dp-lime);
+  background: var(--dp-lime);
+}
+
+.flowStep > span {
+  display: block;
+  margin-bottom: 15px;
+  color: var(--dp-faint);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.flowStep strong {
+  display: block;
+  max-width: 150px;
+  color: var(--dp-ink);
+  font-family: var(--dp-display);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.flowStep small {
+  display: block;
+  max-width: 150px;
+  margin-top: 7px;
+  color: var(--dp-muted);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+/* ── WebMCP human gate ────────────────────────────────── */
+
+.toolGate {
+  display: grid;
+  grid-template-columns:
+    1fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-top: 15px;
+  border-top: 1px solid var(--dp-line);
+  padding-top: 13px;
+}
+
+.toolGate > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolGate > div:last-child {
+  text-align: right;
+}
+
+.toolGate span {
+  color: var(--dp-faint);
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.toolGate strong {
+  color: var(--dp-ink);
+  font-family: var(--dp-sans);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.toolGateArrow {
+  color: var(--dp-line-strong) !important;
+  font-size: 14px !important;
+}
+
+.toolGateLocked strong {
+  color: var(--dp-muted);
+}
+
+.toolGateUnlocked strong {
+  display: inline-block;
+  color: var(--dp-ink);
+  background: var(--dp-lime);
+  padding: 3px 5px;
+}
+
+/* ── Mobile: full functional experience ───────────────── */
+
+@media (max-width: 760px) {
+  html,
+  body,
+  #root,
+  .app {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-width: 0 !important;
+  }
+
+  .topbar {
+    display: grid;
+    grid-template-columns:
+      auto 1fr auto;
+    grid-template-rows:
+      auto auto;
+    height: auto;
+    min-height: 76px;
+    gap: 5px 12px;
+    padding: 13px 17px;
+  }
+
+  .brand {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    font-size: 17px;
+  }
+
+  .divider,
+  .tagline {
+    display: none;
+  }
+
+  .product {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    font-size: 19px;
+  }
+
+  .resetButton {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    justify-self: start;
+    min-height: 36px;
+    margin: 0;
+    padding: 7px 0;
+  }
+
+  .language {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    align-self: center;
+    margin: 0;
+  }
+
+  .language button {
+    min-width: 35px;
+    min-height: 44px;
+  }
+
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    border: 0;
+  }
+
+  /*
+    display:contents により
+    Hero → Input → Impact → Activity → Candidates
+    の順に並べ替える。
+  */
+  .centerPanel {
+    display: contents;
+  }
+
+  .hero {
+    order: 1;
+    padding: 28px 20px 24px;
+  }
+
+  .leftPanel {
+    order: 2;
+    border: 0;
+    border-top: 1px solid var(--dp-line);
+    padding: 22px 20px;
+  }
+
+  .impactPanel {
+    order: 3;
+    width: auto;
+    min-height: 0;
+    margin: 0 20px;
+    padding: 19px 17px;
+  }
+
+  .activityPanel {
+    order: 4;
+    margin: 22px 20px 0;
+  }
+
+  .rightPanel {
+    order: 5;
+    border: 0;
+    border-top: 1px solid var(--dp-line);
+    margin-top: 22px;
+    padding: 22px 20px 30px;
+  }
+
+  .hero::before {
+    width: 25px;
+    margin-bottom: 14px;
+  }
+
+  .hero h1 {
+    max-width: 100%;
+    font-size: clamp(
+      34px,
+      10.5vw,
+      46px
+    );
+    line-height: 1.01;
+  }
+
+  .hero p {
+    margin-top: 13px;
+    font-size: 12px;
+  }
+
+  .sectionLabel {
+    font-size: 9px;
+  }
+
+  .card {
+    padding: 17px;
+  }
+
+  .facts div {
+    min-height: 33px;
+    align-items: center;
+  }
+
+  .facts dt,
+  .facts dd {
+    font-size: 10px;
+  }
+
+  .decision {
+    font-size: 25px;
+  }
+
+  select,
+  textarea,
+  .primary,
+  .secondaryAction,
+  .readyAction {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  textarea {
+    min-height: 105px;
+  }
+
+  .emptyExperience {
+    padding-top: 25px;
+  }
+
+  .emptyExperienceLead h2 {
+    font-size: 27px;
+  }
+
+  .emptyExperienceLead p {
+    font-size: 11px;
+  }
+
+  .valueFlow {
+    grid-template-columns: 1fr;
+    margin-top: 35px;
+    border-top: 0;
+    border-left:
+      1px solid var(--dp-line-strong);
+  }
+
+  .flowStep {
+    min-height: 92px;
+    padding: 0 10px 23px 24px;
+  }
+
+  .flowStep::before {
+    top: 3px;
+    left: -4px;
+  }
+
+  .flowStep > span {
+    margin-bottom: 7px;
+  }
+
+  .flowStep strong,
+  .flowStep small {
+    max-width: none;
+  }
+
+  .flowStep strong {
+    font-size: 16px;
+  }
+
+  .boundaryEditor {
+    padding: 17px 15px;
+  }
+
+  .editorHeader {
+    display: grid;
+    gap: 11px;
+  }
+
+  .simulationStatus {
+    justify-self: start;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .editorGrid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .editorGrid select {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .humanEditNote {
+    grid-template-columns: 1fr;
+  }
+
+  .metricsGrid,
+  .deltaMetrics {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .metricsGrid > div,
+  .deltaMetrics > div {
+    min-height: 84px;
+  }
+
+  .metricsGrid > div:nth-child(2),
+  .deltaMetrics > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .metricsGrid > div:nth-child(-n+2),
+  .deltaMetrics > div:nth-child(-n+2) {
+    border-bottom:
+      1px solid var(--dp-line);
+  }
+
+  .simulationIntro,
+  .deltaIntro {
+    display: grid;
+    gap: 10px;
+  }
+
+  .matrixNote {
+    line-height: 1.5;
+  }
+
+  .counterexample {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .counterexample > div {
+    justify-content: flex-start;
+  }
+
+  .counterexample span,
+  .counterexample small {
+    font-size: 9px;
+  }
+
+  .patchCard {
+    min-height: 44px;
+    padding: 17px;
+  }
+
+  .patchCard.selected {
+    padding: 17px;
+  }
+
+  .patchHeader strong {
+    font-size: 21px;
+  }
+
+  .conditions span {
+    font-size: 9px;
+    line-height: 1.45;
+  }
+
+  .webmcpCard {
+    padding: 17px;
+  }
+
+  .webmcpCard strong {
+    font-size: 18px;
+  }
+
+  .webmcpCard p {
+    font-size: 10px;
+  }
+
+  .toolGate {
+    min-height: 67px;
+  }
+
+  .toolGate strong {
+    font-size: 12px;
+  }
+
+  .activityRow {
+    grid-template-columns:
+      52px minmax(0, 1fr);
+    min-height: 48px;
+  }
+
+  .activityRow p {
+    font-size: 10px;
+  }
+
+  footer {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  footer .lime {
+    min-height: 95px;
+    padding: 23px 20px;
+    font-size: 17px;
+  }
+
+  footer .navy {
+    display: grid;
+    gap: 13px;
+    min-height: 130px;
+    padding: 24px 20px;
+    font-size: 9px;
+  }
+
+  footer .navy span:last-child {
+    margin-left: 0;
+  }
+}

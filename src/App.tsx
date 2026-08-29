@@ -49,6 +49,28 @@ interface ActivityEvent {
   ja: string;
 }
 
+const DECISION_JA: Record<Decision, string> = {
+  APPROVE: "承認",
+  HUMAN_REVIEW: "人による確認",
+  DECLINE: "見送り"
+};
+
+const LEVEL_JA: Record<string, string> = {
+  LOW: "低",
+  MEDIUM: "中",
+  HIGH: "高",
+  WEAK: "弱い",
+  PARTIAL: "一部",
+  STRONG: "十分",
+  ANY: "指定なし"
+};
+
+const SCOPE_JA: Record<DecisionPatch["scope"], string> = {
+  NARROW: "狭く適用",
+  BALANCED: "バランス",
+  BROAD: "広く適用"
+};
+
 export default function App() {
   const [lang, setLang] = useState<"en" | "ja">("en");
 
@@ -564,6 +586,44 @@ export default function App() {
   const t = copy[lang];
   const c = workspace.observedCase;
 
+  const displayDecision = (value: Decision) =>
+    lang === "ja"
+      ? DECISION_JA[value]
+      : value;
+
+  const displayLevel = (value: string) =>
+    lang === "ja"
+      ? LEVEL_JA[value] ?? value
+      : value;
+
+  const displayScope = (
+    value: DecisionPatch["scope"]
+  ) =>
+    lang === "ja"
+      ? SCOPE_JA[value]
+      : value;
+
+  const displayCaseType = (value: string) => {
+    if (
+      lang === "ja" &&
+      value === "Critical support request"
+    ) {
+      return "重要支援の申請";
+    }
+
+    return value;
+  };
+
+  const initialRationale =
+    initialWorkspace.humanCorrection.rationale;
+
+  const displayedRationale =
+    lang === "ja" &&
+    workspace.humanCorrection.rationale ===
+      initialRationale
+      ? "緊急度と脆弱性が高く、この判断を支える十分な根拠があるため。"
+      : workspace.humanCorrection.rationale;
+
   const selectedPatch =
     patches.find(
       (patch) => patch.id === selectedPatchId
@@ -663,7 +723,7 @@ export default function App() {
           : "Continuity impact ≥"
     };
 
-    return `${labels[key] ?? key} ${value}`;
+    return `${labels[key] ?? key} ${displayLevel(value)}`;
   };
 
   const updateSelectedCondition = (
@@ -940,28 +1000,72 @@ export default function App() {
                 <dd>{c.id}</dd>
               </div>
               <div>
-                <dt>Type</dt>
-                <dd>{c.caseType}</dd>
+                <dt>
+                  {lang === "ja"
+                    ? "ケース種別"
+                    : "Type"}
+                </dt>
+                <dd>
+                  {displayCaseType(c.caseType)}
+                </dd>
               </div>
               <div>
-                <dt>Urgency</dt>
-                <dd>{c.urgency}</dd>
+                <dt>
+                  {lang === "ja"
+                    ? "緊急度"
+                    : "Urgency"}
+                </dt>
+                <dd>
+                  {displayLevel(c.urgency)}
+                </dd>
               </div>
               <div>
-                <dt>Evidence</dt>
-                <dd>{c.evidenceStrength}</dd>
+                <dt>
+                  {lang === "ja"
+                    ? "根拠"
+                    : "Evidence"}
+                </dt>
+                <dd>
+                  {displayLevel(
+                    c.evidenceStrength
+                  )}
+                </dd>
               </div>
               <div>
-                <dt>Potential harm</dt>
-                <dd>{c.potentialHarm}</dd>
+                <dt>
+                  {lang === "ja"
+                    ? "潜在的損害"
+                    : "Potential harm"}
+                </dt>
+                <dd>
+                  {displayLevel(
+                    c.potentialHarm
+                  )}
+                </dd>
               </div>
               <div>
-                <dt>Vulnerability</dt>
-                <dd>{c.vulnerability}</dd>
+                <dt>
+                  {lang === "ja"
+                    ? "脆弱性"
+                    : "Vulnerability"}
+                </dt>
+                <dd>
+                  {displayLevel(
+                    c.vulnerability
+                  )}
+                </dd>
               </div>
               <div>
-                <dt>Continuity</dt>
-                <dd>{c.continuityImpact}</dd>
+                <dt>
+                  {lang === "ja"
+                    ? "継続への影響"
+                    : "Continuity"}
+                </dt>
+                <dd>
+                  {displayLevel(
+                    c.continuityImpact
+                  )}
+                </dd>
               </div>
             </dl>
           </div>
@@ -972,7 +1076,9 @@ export default function App() {
             </div>
 
             <div className="decision before">
-              {workspace.agentDecision}
+              {displayDecision(
+                workspace.agentDecision
+              )}
             </div>
           </div>
 
@@ -990,22 +1096,22 @@ export default function App() {
               }
             >
               <option value="APPROVE">
-                APPROVE
+                {displayDecision("APPROVE")}
               </option>
               <option value="HUMAN_REVIEW">
-                HUMAN_REVIEW
+                {displayDecision(
+                  "HUMAN_REVIEW"
+                )}
               </option>
               <option value="DECLINE">
-                DECLINE
+                {displayDecision("DECLINE")}
               </option>
             </select>
 
             <label>{t.rationale}</label>
 
             <textarea
-              value={
-                workspace.humanCorrection.rationale
-              }
+              value={displayedRationale}
               onChange={(e) =>
                 setWorkspace((current) => ({
                   ...current,
@@ -1068,8 +1174,84 @@ export default function App() {
             </div>
 
             {!workspace.precedentRecorded && (
-              <div className="emptyState">
-                {t.impactEmpty}
+              <div className="emptyExperience">
+                <div className="emptyExperienceLead">
+                  <span className="eyebrow">
+                    {lang === "ja"
+                      ? "まだ公開ルールではありません"
+                      : "NOT A RULE YET"}
+                  </span>
+
+                  <h2>
+                    {lang === "ja"
+                      ? "今は、まだ一件の人の判断です。"
+                      : "For now, this is only one human decision."}
+                  </h2>
+
+                  <p>
+                    {lang === "ja"
+                      ? "この修正を一般化する前に、どの判断まで変わり、どこに反例が生まれるかを確かめます。"
+                      : "Before generalizing it, Decision Patch shows which other decisions would move—and where counterexamples appear."}
+                  </p>
+                </div>
+
+                <div className="valueFlow">
+                  <div className="flowStep current">
+                    <span>01</span>
+                    <strong>
+                      {lang === "ja"
+                        ? "人が一件を修正"
+                        : "Human corrects"}
+                    </strong>
+                    <small>
+                      {lang === "ja"
+                        ? "判断と理由を残す"
+                        : "One decision + rationale"}
+                    </small>
+                  </div>
+
+                  <div className="flowStep">
+                    <span>02</span>
+                    <strong>
+                      {lang === "ja"
+                        ? "Agentが境界を提案"
+                        : "Agent proposes"}
+                    </strong>
+                    <small>
+                      {lang === "ja"
+                        ? "適用範囲を複数案にする"
+                        : "Candidate boundaries"}
+                    </small>
+                  </div>
+
+                  <div className="flowStep">
+                    <span>03</span>
+                    <strong>
+                      {lang === "ja"
+                        ? "影響と反例を再生"
+                        : "Replay impact"}
+                    </strong>
+                    <small>
+                      {lang === "ja"
+                        ? "変わる判断を先に見る"
+                        : "Changes + counterexamples"}
+                    </small>
+                  </div>
+
+                  <div className="flowStep">
+                    <span>04</span>
+                    <strong>
+                      {lang === "ja"
+                        ? "人が公開を解放"
+                        : "Human unlocks publish"}
+                    </strong>
+                    <small>
+                      {lang === "ja"
+                        ? "明示承認まで公開しない"
+                        : "Nothing publishes before approval"}
+                    </small>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1078,30 +1260,28 @@ export default function App() {
                 <div className="precedentState">
                   <div className="shift">
                     <span>
-                      {workspace.agentDecision}
+                      {displayDecision(
+                        workspace.agentDecision
+                      )}
                     </span>
                     <span className="arrow">
                       →
                     </span>
                     <strong>
-                      {
-                        workspace.humanCorrection
+                      {displayDecision(
+                        workspace
+                          .humanCorrection
                           .decision
-                      }
+                      )}
                     </strong>
                   </div>
 
-                  <p>
-                    {
-                      workspace.humanCorrection
-                        .rationale
-                    }
-                  </p>
+                  <p>{displayedRationale}</p>
 
                   <div className="honesty">
-                    Observed correction only. No
-                    generalized rule has been
-                    published.
+                    {lang === "ja"
+                      ? "ここで記録されたのは一件の修正だけです。一般化されたルールはまだ公開されていません。"
+                      : "Observed correction only. No generalized rule has been published."}
                   </div>
                 </div>
               )}
@@ -1329,7 +1509,9 @@ export default function App() {
                         {t.selected}
                       </span>
                       <strong>
-                        {selectedPatch.scope}
+                        {displayScope(
+                          selectedPatch.scope
+                        )}
                       </strong>
                     </div>
 
@@ -1340,7 +1522,9 @@ export default function App() {
                           selectedSimulation.total
                         }
                       </strong>{" "}
-                      combinations
+                      {lang === "ja"
+                        ? "通り"
+                        : "combinations"}
                     </div>
                   </div>
 
@@ -1488,11 +1672,13 @@ export default function App() {
                                 {item.id}
                               </strong>
                               <span>
-                                {item.urgency} urgency ·{" "}
-                                {
-                                  item.evidenceStrength
-                                }{" "}
-                                evidence
+                                {lang === "ja"
+                                  ? `${displayLevel(
+                                      item.urgency
+                                    )} 緊急度 · ${displayLevel(
+                                      item.evidenceStrength
+                                    )} 根拠`
+                                  : `${item.urgency} urgency · ${item.evidenceStrength} evidence`}
                               </span>
                             </div>
 
@@ -1511,10 +1697,11 @@ export default function App() {
                             </div>
 
                             <small>
-                              Synthetic reference:{" "}
-                              {
-                                item.referenceDecision
-                              }
+                              {lang === "ja"
+                                ? `参照判断: ${displayDecision(
+                                    item.referenceDecision
+                                  )}`
+                                : `Synthetic reference: ${item.referenceDecision}`}
                             </small>
                           </div>
                         ))
@@ -1526,10 +1713,14 @@ export default function App() {
                     selectedPatch.id ? (
                       <div className="publishedState">
                         <strong>
-                          Published policy
+                          {lang === "ja"
+                            ? "公開済みルール"
+                            : "Published policy"}
                         </strong>
                         <span>
-                          This candidate is now the active demo policy.
+                          {lang === "ja"
+                            ? "この候補が現在のデモ用ルールです。"
+                            : "This candidate is now the active demo policy."}
                         </span>
                       </div>
                     ) : (
@@ -1548,18 +1739,20 @@ export default function App() {
                       >
                         {readyPatchId ===
                         selectedPatch.id
-                          ? "✓ Ready — publish tool unlocked"
-                          : "Mark this patch ready"}
+                          ? lang === "ja"
+                            ? "✓ 公開準備完了 — 6番目のToolを解放"
+                            : "✓ Ready — publish tool unlocked"
+                          : lang === "ja"
+                            ? "このパッチを公開準備完了にする"
+                            : "Mark this patch ready"}
                       </button>
                     )}
                   </div>
 
                   <div className="honesty">
-                    Counts describe the complete
-                    synthetic combination matrix used
-                    for this demo. They are not
-                    estimates of real-world frequency
-                    or business impact.
+                    {lang === "ja"
+                      ? "表示件数は、このデモで用いる合成データの全組合せを評価した結果です。実社会の発生頻度や事業効果を推定した数字ではありません。"
+                      : "Counts describe the complete synthetic combination matrix used for this demo. They are not estimates of real-world frequency or business impact."}
                   </div>
                 </div>
               )}
@@ -1569,11 +1762,15 @@ export default function App() {
             <div className="activityPanel">
               <div className="activityHeader">
                 <span className="sectionLabel">
-                  ACTIVITY
+                  {lang === "ja"
+                    ? "操作履歴"
+                    : "ACTIVITY"}
                 </span>
 
                 <span>
-                  Human × Agent
+                  {lang === "ja"
+                    ? "人 × Agent"
+                    : "Human × Agent"}
                 </span>
               </div>
 
@@ -1635,7 +1832,9 @@ export default function App() {
                   >
                     <div className="patchHeader">
                       <strong>
-                        {patch.scope}
+                        {displayScope(
+                          patch.scope
+                        )}
                       </strong>
 
                       {result && (
@@ -1662,18 +1861,24 @@ export default function App() {
                     </div>
 
                     <div className="patchOutcome">
-                      → {patch.outcome}
+                      → {displayDecision(
+                        patch.outcome
+                      )}
                     </div>
 
                     {readyPatchId === patch.id && (
                       <div className="patchBadge ready">
-                        HUMAN READY
+                        {lang === "ja"
+                          ? "人が公開準備完了"
+                          : "HUMAN READY"}
                       </div>
                     )}
 
                     {publishedPatchId === patch.id && (
                       <div className="patchBadge published">
-                        PUBLISHED
+                        {lang === "ja"
+                          ? "公開済み"
+                          : "PUBLISHED"}
                       </div>
                     )}
                   </button>
@@ -1684,7 +1889,11 @@ export default function App() {
 
           <div className="webmcpCard">
             <div>
-              <strong>WebMCP tools</strong>
+              <strong>
+                {lang === "ja"
+                  ? "Agentが使えるTool"
+                  : "Agent surface"}
+              </strong>
 
               <span
                 className={
@@ -1703,35 +1912,93 @@ export default function App() {
             <p>
               {webmcpToolCount > 0
                 ? publishToolAvailable
-                  ? "Human ready state detected. The publish tool is now available to the agent."
-                  : "The agent can inspect, draft, simulate, compare, and revise. Publish remains unavailable until a human marks one patch ready."
+                  ? lang === "ja"
+                    ? "人の明示承認を検知しました。公開ToolがAgentに追加されています。"
+                    : "Human approval detected. The publish tool is now exposed to the agent."
+                  : lang === "ja"
+                    ? "Agentは確認・候補生成・シミュレーション・比較・修正が可能です。公開だけは、人が準備完了にするまで使えません。"
+                    : "The agent can inspect, draft, simulate, compare, and revise. Publish stays unavailable until a human marks one patch ready."
                 : t.unavailable}
             </p>
+
+            {webmcpToolCount > 0 && (
+              <div className="toolGate">
+                <div>
+                  <span>
+                    {lang === "ja"
+                      ? "通常"
+                      : "CURRENT"}
+                  </span>
+                  <strong>
+                    {webmcpToolCount} tools
+                  </strong>
+                </div>
+
+                <span className="toolGateArrow">
+                  →
+                </span>
+
+                <div
+                  className={
+                    publishToolAvailable
+                      ? "toolGateUnlocked"
+                      : "toolGateLocked"
+                  }
+                >
+                  <span>
+                    {publishToolAvailable
+                      ? lang === "ja"
+                        ? "人の承認後"
+                        : "HUMAN READY"
+                      : lang === "ja"
+                        ? "人の承認で解放"
+                        : "ON HUMAN READY"}
+                  </span>
+                  <strong>
+                    {webmcpToolCount + 1} tools
+                  </strong>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </main>
 
       <footer>
         <div className="lime">
-          Every correction is a lesson.
-          <br />
-          Every lesson can improve the next
-          decision.
+          {lang === "ja" ? (
+            <>
+              一つの修正を、一つの学びに。
+              <br />
+              次の判断を、より良いものに。
+            </>
+          ) : (
+            <>
+              Every correction is a lesson.
+              <br />
+              Every lesson can improve the next decision.
+            </>
+          )}
         </div>
 
         <div className="navy">
           <strong>SOLIFAN</strong>
           <span>
-            Foundations empower challenges.
+            {lang === "ja"
+              ? "挑戦を支える土台をつくる。"
+              : "Foundations empower challenges."}
           </span>
           <span>
-            SYNTHETIC DATA FOR DEMONSTRATION ONLY
+            {lang === "ja"
+              ? "デモ用の合成データを使用"
+              : "SYNTHETIC DATA FOR DEMONSTRATION ONLY"}
           </span>
         </div>
       </footer>
     </div>
   );
 }
+
 
 
 

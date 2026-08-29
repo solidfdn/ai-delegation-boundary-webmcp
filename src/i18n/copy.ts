@@ -34,7 +34,7 @@
     title: "一件の修正が、次の多くの判断を変える。",
     subtitle:
       "Agentに学ばせる前に、他の何が変わるかを確認する。",
-    input: "INPUT / 人の修正",
+    input: "入力 / 人の修正",
     observed: "観測されたケース",
     agentBefore: "Agentの判断 — 修正前",
     correction: "あなたの修正",
@@ -46,7 +46,7 @@
     impactEmpty:
       "まだ一般化されたルールはありません。修正を記録し、候補パッチをシミュレーションしてください。",
     candidates: "候補パッチ",
-    candidatesEmpty: "候補パッチはまだありません。",
+    candidatesEmpty: "まだ候補は生成されていません。",
     evaluation:
       "合成データによる全組合せ評価",
     changed: "判断が変わる組合せ",
@@ -62,3 +62,4 @@
       "WebMCP対応ブラウザで開くとAgent用ツールが公開されます。"
   }
 } as const;
+
