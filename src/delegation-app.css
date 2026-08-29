@@ -1708,3 +1708,249 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+/* ==========================================================
+   SOLIFAN SERVICE CUE
+   One next action. Quietly indicated.
+   ========================================================== */
+
+.adb-app {
+  --guide: #7894b2;
+  --guide-soft: #f6f9fc;
+}
+
+.adb-next-cue {
+  display: grid;
+  grid-template-columns: auto auto auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+
+  min-height: 50px;
+  padding: 9px clamp(30px, 5vw, 78px);
+
+  border-bottom: 1px solid var(--line);
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--guide-soft),
+      #ffffff 62%
+    );
+}
+
+.adb-next-cue-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+  background: var(--lime);
+
+  box-shadow:
+    0 0 0 4px
+    rgba(201, 255, 53, .16);
+}
+
+.adb-next-cue-owner {
+  color: var(--guide);
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+
+.adb-next-cue strong {
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.adb-next-cue small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.adb-protocol-step {
+  position: relative;
+}
+
+.adb-protocol-step::after {
+  position: absolute;
+  top: 15px;
+  right: 18px;
+
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+  background: transparent;
+
+  content: "";
+}
+
+.adb-app[data-next="scope"]
+.adb-protocol-step:nth-child(1)::after,
+
+.adb-app[data-next="agent"]
+.adb-protocol-step:nth-child(2)::after,
+
+.adb-app[data-next="review"]
+.adb-protocol-step:nth-child(2)::after,
+
+.adb-app[data-next="boundary"]
+.adb-protocol-step:nth-child(3)::after,
+
+.adb-app[data-next="decision"]
+.adb-protocol-step:nth-child(3)::after,
+
+.adb-app[data-next="approve"]
+.adb-protocol-step:nth-child(3)::after,
+
+.adb-app[data-next="apply"]
+.adb-protocol-step:nth-child(4)::after,
+
+.adb-app[data-next="complete"]
+.adb-protocol-step:nth-child(4)::after {
+  background: var(--lime);
+
+  box-shadow:
+    0 0 0 4px
+    rgba(201, 255, 53, .14);
+}
+
+/* Quietly frame only the place that deserves attention. */
+
+.adb-app[data-next="scope"]
+.adb-task-card.is-setup,
+
+.adb-app[data-next="decision"]
+.adb-challenge.open,
+
+.adb-app[data-next="boundary"]
+.adb-rules,
+
+.adb-app[data-next="agent"]
+.adb-agent-card,
+
+.adb-app[data-next="review"]
+.adb-agent-card,
+
+.adb-app[data-next="apply"]
+.adb-agent-card {
+  box-shadow:
+    0 0 0 1px rgba(120, 148, 178, .58),
+    0 10px 30px rgba(11, 29, 53, .035);
+}
+
+.adb-app[data-next="scope"]
+.adb-task-card.is-setup,
+
+.adb-app[data-next="decision"]
+.adb-challenge.open,
+
+.adb-app[data-next="agent"]
+.adb-agent-card,
+
+.adb-app[data-next="review"]
+.adb-agent-card,
+
+.adb-app[data-next="apply"]
+.adb-agent-card {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(246, 249, 252, .72),
+      #ffffff 48%
+    );
+}
+
+.adb-app[data-next="approve"]
+.adb-approve-button {
+  box-shadow:
+    0 0 0 2px rgba(120, 148, 178, .42),
+    0 8px 24px rgba(11, 29, 53, .07);
+}
+
+/* Human decision: unmistakable, not loud. */
+
+.adb-challenge.open {
+  padding: 18px;
+  border: 1px solid var(--line-strong);
+}
+
+.adb-challenge-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+
+  margin-top: 18px;
+  padding-top: 14px;
+
+  border-top: 1px solid var(--ink);
+}
+
+.adb-challenge-actions::before {
+  grid-column: 1 / -1;
+
+  margin-bottom: 3px;
+
+  color: var(--guide);
+
+  content:
+    "HUMAN DECISION REQUIRED · Choose one outcome";
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .09em;
+}
+
+.adb-challenge-actions button {
+  min-height: 48px;
+
+  padding: 9px 11px;
+
+  border: 1px solid var(--line-strong);
+
+  background: #ffffff;
+  color: var(--ink);
+
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.adb-challenge-actions button:hover,
+.adb-challenge-actions button:focus-visible {
+  border-color: var(--ink);
+  background: var(--guide-soft);
+}
+
+.adb-app[data-next="complete"]
+.adb-next-cue {
+  background: #ffffff;
+}
+
+.adb-app[data-next="complete"]
+.adb-next-cue-dot {
+  box-shadow: none;
+}
+
+@media (max-width: 800px) {
+  .adb-next-cue {
+    grid-template-columns:
+      auto auto 1fr;
+
+    padding: 10px 18px;
+  }
+
+  .adb-next-cue small {
+    grid-column: 2 / -1;
+  }
+
+  .adb-challenge-actions {
+    grid-template-columns: 1fr;
+  }
+}

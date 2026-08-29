@@ -408,6 +408,85 @@ export default function DelegationApp() {
             ? "完了"
             : "PASSED";
 
+  const nextCue = (() => {
+    if (!taskConfigured) {
+      return {
+        key: "scope",
+        owner: "NEXT · HUMAN",
+        title: "Scope the work",
+        detail:
+          "Define the work before the Agent can change authority."
+      };
+    }
+
+    if (current.status === "APPLIED") {
+      return {
+        key: "complete",
+        owner: "COMPLETE",
+        title: "Approved boundary applied",
+        detail:
+          "The exact human-approved revision is now active."
+      };
+    }
+
+    if (current.status === "APPROVED") {
+      return {
+        key: "apply",
+        owner: "NEXT · AGENT",
+        title: "Apply the exact approved revision",
+        detail:
+          "Human approval has unlocked the sixth WebMCP capability."
+      };
+    }
+
+    if (current.status === "READY_FOR_DECISION") {
+      return {
+        key: "approve",
+        owner: "NEXT · HUMAN",
+        title: "Decide on this exact revision",
+        detail:
+          "Checks are complete. Final authority remains human."
+      };
+    }
+
+    if (current.status === "BLOCKED") {
+      return {
+        key: "boundary",
+        owner: "NEXT · HUMAN",
+        title: "Adjust the delegation boundary",
+        detail:
+          "Resolve the conflict, then require a fresh Agent Challenge."
+      };
+    }
+
+    if (openChallenges.length > 0) {
+      return {
+        key: "decision",
+        owner: "NEXT · HUMAN",
+        title: "Resolve the open Agent Challenge",
+        detail:
+          "Choose the judgment that should protect future revisions."
+      };
+    }
+
+    if (current.challenges.length === 0) {
+      return {
+        key: "agent",
+        owner: "NEXT · AGENT",
+        title: "Propose and challenge the boundary",
+        detail:
+          "Change one rule, then try to break that exact revision."
+      };
+    }
+
+    return {
+      key: "review",
+      owner: "NEXT · AGENT",
+      title: "Re-run boundary checks",
+      detail:
+        "Verify Guardrails and Known Decisions before human approval."
+    };
+  })();
   const factorLabel = (
     factorId: string
   ) => {
@@ -634,6 +713,7 @@ export default function DelegationApp() {
   return (
     <div
       className={`adb-app adb-${lang}`}
+      data-next={nextCue.key}
     >
       <header className="adb-header">
         <div className="adb-brand">
@@ -800,6 +880,27 @@ export default function DelegationApp() {
         </div>
       </section>
 
+      <div
+        className="adb-next-cue"
+        aria-live="polite"
+      >
+        <span
+          className="adb-next-cue-dot"
+          aria-hidden="true"
+        />
+
+        <span className="adb-next-cue-owner">
+          {nextCue.owner}
+        </span>
+
+        <strong>
+          {nextCue.title}
+        </strong>
+
+        <small>
+          {nextCue.detail}
+        </small>
+      </div>
       {message && (
         <div className="adb-message">
           {message}
