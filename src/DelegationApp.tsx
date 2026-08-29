@@ -1955,19 +1955,37 @@ export default function DelegationApp() {
                     Agent actions available
                   </strong>
 
-                  <p className="adb-runtime-architecture">
-                    <span className="adb-runtime-backend">
-                      No AI backend.
-                    </span>{" "}
+                  <div className="adb-runtime-map">
+                    <div className="adb-runtime-row adb-runtime-backend-row">
+                      <span>
+                        BACKEND
+                      </span>
 
-                    <span className="adb-runtime-agent">
-                      Your WebMCP-compatible client supplies the Agent;
-                    </span>{" "}
+                      <p>
+                        No AI backend.
+                      </p>
+                    </div>
 
-                    <span className="adb-runtime-authority">
-                      the web app owns the boundary, Guardrails, human judgments, approval, and applied state.
-                    </span>
-                  </p>
+                    <div className="adb-runtime-row adb-runtime-agent-row">
+                      <span>
+                        AGENT
+                      </span>
+
+                      <p>
+                        Your WebMCP-compatible client supplies the Agent.
+                      </p>
+                    </div>
+
+                    <div className="adb-runtime-row adb-runtime-authority-row">
+                      <span>
+                        AUTHORITY
+                      </span>
+
+                      <p>
+                        The web app owns the boundary, Guardrails, human judgments, approval, and applied state.
+                      </p>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
@@ -1975,19 +1993,37 @@ export default function DelegationApp() {
                     Human workspace available
                   </strong>
 
-                  <p className="adb-runtime-architecture">
-                    <span className="adb-runtime-authority">
-                      This page is still available for human review and boundary editing.
-                    </span>{" "}
+                  <div className="adb-runtime-map">
+                    <div className="adb-runtime-row adb-runtime-authority-row">
+                      <span>
+                        WORKSPACE
+                      </span>
 
-                    <span className="adb-runtime-agent">
-                      To run Agent propose, challenge, and review actions, open this page in ChatGPT or another WebMCP-enabled client.
-                    </span>
-                  </p>
+                      <p>
+                        This page is still available for human review and boundary editing.
+                      </p>
+                    </div>
 
-                  <small className="adb-runtime-backend-note">
-                    No AI backend required.
-                  </small>
+                    <div className="adb-runtime-row adb-runtime-agent-row">
+                      <span>
+                        AGENT
+                      </span>
+
+                      <p>
+                        To run Agent propose, challenge, and review actions, open this page in ChatGPT or another WebMCP-enabled client.
+                      </p>
+                    </div>
+
+                    <div className="adb-runtime-row adb-runtime-backend-row">
+                      <span>
+                        BACKEND
+                      </span>
+
+                      <p>
+                        No AI backend required.
+                      </p>
+                    </div>
+                  </div>
                 </>
               )}
             </div>

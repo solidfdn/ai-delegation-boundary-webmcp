@@ -2335,3 +2335,185 @@ select:focus-visible {
   font-weight: 700;
   letter-spacing: .02em;
 }
+/* ==========================================================
+   SOLIFAN WORKSPACE COMPOSITION V4
+   Deliberate whitespace + readable responsibility mapping.
+   ========================================================== */
+
+/*
+ * The right rail carries important Challenge judging context,
+ * so give it enough width to read without crowding.
+ *
+ * The central review area remains the largest working field.
+ */
+
+.adb-app .adb-workspace {
+  grid-template-columns:
+    minmax(290px, .93fr)
+    minmax(410px, 1.33fr)
+    minmax(285px, .88fr);
+}
+
+/* ==========================================================
+   WebMCP responsibility map
+   ========================================================== */
+
+.adb-app .adb-agent-card {
+  padding: 19px;
+}
+
+.adb-app .adb-runtime-copy {
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.adb-app .adb-runtime-primary {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.adb-app .adb-runtime-map {
+  margin-top: 10px;
+
+  border-top:
+    1px solid var(--line);
+}
+
+.adb-app .adb-runtime-row {
+  display: grid;
+  grid-template-columns:
+    62px minmax(0, 1fr);
+
+  gap: 10px;
+  align-items: start;
+
+  padding:
+    9px 0;
+
+  border-bottom:
+    1px solid var(--line);
+}
+
+.adb-app .adb-runtime-row > span {
+  padding-top: 1px;
+
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 1.45;
+  letter-spacing: .10em;
+}
+
+.adb-app .adb-runtime-row > p {
+  margin: 0;
+
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+/* Infrastructure is deliberately neutral. */
+
+.adb-app .adb-runtime-backend-row > span,
+.adb-app .adb-runtime-backend-row > p {
+  color: var(--muted);
+}
+
+/* The Agent comes from outside the web app. */
+
+.adb-app .adb-runtime-agent-row > span,
+.adb-app .adb-runtime-agent-row > p {
+  color: var(--agent-blue);
+}
+
+.adb-app .adb-runtime-agent-row > p {
+  font-weight: 600;
+}
+
+/* Authority stays inside the controlled web state. */
+
+.adb-app .adb-runtime-authority-row > span,
+.adb-app .adb-runtime-authority-row > p {
+  color: var(--ink);
+}
+
+.adb-app .adb-runtime-authority-row > p {
+  font-weight: 700;
+}
+
+/*
+ * Keep 5 -> 6 visually separate from the architecture map:
+ * first understand ownership, then see capability change.
+ */
+
+.adb-app .adb-capability {
+  margin-top: 13px;
+  padding-top: 13px;
+}
+
+/* ==========================================================
+   Desktop composition
+   ========================================================== */
+
+@media (min-width: 901px) {
+
+  /*
+   * Columns intentionally share the same baseline.
+   * Empty room remains available for future Challenges and
+   * Revision history instead of being filled with decoration.
+   */
+
+  .adb-app .adb-review-column,
+  .adb-app .adb-history-column {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /*
+   * Review/approval is the final action of the central column.
+   * Anchor it to the baseline so the column feels complete even
+   * before Challenges have accumulated.
+   */
+
+  .adb-app
+  .adb-review-column
+  .adb-decision-controls {
+    margin-top: auto;
+
+    padding-top: 30px;
+  }
+
+  /*
+   * Decision Patch acts as the philosophical closing point
+   * of the right rail. The operational WebMCP card remains
+   * near the history where judges can see it immediately.
+   */
+
+  .adb-app
+  .adb-history-column
+  .adb-principle {
+    margin-top: auto;
+  }
+}
+
+/* ==========================================================
+   Narrow desktop safeguard
+   ========================================================== */
+
+@media (
+  min-width: 901px
+) and (
+  max-width: 1080px
+) {
+  .adb-app .adb-workspace {
+    grid-template-columns:
+      minmax(280px, .92fr)
+      minmax(390px, 1.28fr)
+      minmax(275px, .86fr);
+  }
+
+  .adb-app .adb-runtime-row {
+    grid-template-columns:
+      56px minmax(0, 1fr);
+
+    gap: 8px;
+  }
+}
