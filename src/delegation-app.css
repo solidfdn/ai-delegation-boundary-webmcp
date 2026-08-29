@@ -43,13 +43,13 @@ button {
 
 .adb-app {
   --ink: #0b1d35;
-  --muted: #687382;
-  --faint: #98a0aa;
-  --line: #dfe3e8;
-  --line-strong: #aeb7c2;
-  --soft: #f7f8f9;
+  --muted: #66727f;
+  --faint: #96a0aa;
+  --line: #dde1e4;
+  --line-strong: #aeb7c0;
+  --soft: #f6f7f5;
   --lime: #c9ff35;
-  --danger: #a72f2f;
+  --danger: #8f4c52;
 
   min-height: 100vh;
   color: var(--ink);
@@ -2858,4 +2858,235 @@ select:focus-visible {
     width: min(100%, 285px);
     max-width: 285px;
   }
+}
+/* ==========================================================
+   SOLIFAN QUIET LUXURY COLOR V7
+   Quiet hospitality, not decorative SaaS.
+   ========================================================== */
+
+.adb-app {
+  --hotel-paper: #ffffff;
+  --hotel-ivory: #fafaf7;
+  --hotel-stone: #f6f7f5;
+  --hotel-blue: #6f8296;
+  --hotel-blue-soft: #f4f7f9;
+
+  --lime-whisper: #f9ffe8;
+
+  --wine: #8f4c52;
+  --wine-soft: #fcf7f7;
+}
+
+/* ----------------------------------------------------------
+   Editorial hierarchy
+   ---------------------------------------------------------- */
+
+.adb-app .adb-eyebrow {
+  color: var(--hotel-blue);
+}
+
+.adb-app .adb-section-head > span {
+  color: var(--hotel-blue);
+}
+
+.adb-app .adb-card-label {
+  color: #74818e;
+}
+
+/* ----------------------------------------------------------
+   Architectural surfaces
+   Very subtle temperature change only.
+   ---------------------------------------------------------- */
+
+.adb-app .adb-boundary-column {
+  background: var(--hotel-paper);
+}
+
+.adb-app .adb-review-column {
+  background: var(--hotel-paper);
+}
+
+.adb-app .adb-history-column {
+  background: var(--hotel-ivory);
+}
+
+.adb-app .adb-protocol {
+  background: #fbfbf9;
+}
+
+.adb-app .adb-boundary-summary {
+  background: var(--hotel-stone);
+}
+
+.adb-app .adb-review-metrics {
+  background: #fcfcfa;
+}
+
+.adb-app .adb-empty-challenge {
+  background: #fcfcfa;
+}
+
+/* ----------------------------------------------------------
+   Human-owned task entry
+   ---------------------------------------------------------- */
+
+.adb-app .adb-task-card.is-setup {
+  background:
+    linear-gradient(
+      180deg,
+      #fcfdfd 0%,
+      #ffffff 100%
+    );
+}
+
+/* ----------------------------------------------------------
+   Agent / guidance
+   ---------------------------------------------------------- */
+
+.adb-app {
+  --agent-blue: var(--hotel-blue);
+}
+
+.adb-app .adb-runtime-agent-row > span,
+.adb-app .adb-runtime-agent-row > p {
+  color: var(--hotel-blue);
+}
+
+/* ----------------------------------------------------------
+   Active / allowed
+   Lime behaves like a discreet service signal.
+   ---------------------------------------------------------- */
+
+.adb-app .adb-agent-card-head .live {
+  border-color: var(--lime);
+
+  background:
+    var(--lime-whisper);
+
+  color:
+    var(--ink);
+}
+
+.adb-app .outcome-agent_only {
+  border-color: var(--lime);
+
+  background:
+    var(--lime-whisper);
+
+  color:
+    var(--ink);
+}
+
+.adb-app .status-applied {
+  border-color: var(--lime);
+
+  background:
+    var(--lime-whisper);
+
+  color:
+    var(--ink);
+}
+
+.adb-app
+.adb-capability
+.unlocked
+strong {
+  background:
+    var(--lime-whisper);
+
+  box-shadow:
+    inset 0 0 0 1px
+    var(--lime);
+
+  color:
+    var(--ink);
+}
+
+/*
+ * Full-strength lime remains only in small signals:
+ * dots, protocol cues and the Decision Patch label.
+ */
+
+/* ----------------------------------------------------------
+   Human review
+   ---------------------------------------------------------- */
+
+.adb-app .outcome-human_review,
+.adb-app .status-needs_review,
+.adb-app .status-ready_for_decision {
+  border-color:
+    #9aabb9;
+
+  background:
+    var(--hotel-blue-soft);
+
+  color:
+    var(--ink);
+}
+
+/* ----------------------------------------------------------
+   Do not delegate / blocked
+   ---------------------------------------------------------- */
+
+.adb-app .outcome-do_not_delegate,
+.adb-app .status-blocked {
+  border-color:
+    #c9a6aa;
+
+  background:
+    var(--wine-soft);
+
+  color:
+    var(--wine);
+}
+
+/* ----------------------------------------------------------
+   Formal approval
+   Authority is navy, not lime.
+   ---------------------------------------------------------- */
+
+.adb-app .status-approved {
+  border-color:
+    var(--ink);
+
+  background:
+    var(--ink);
+
+  color:
+    #ffffff;
+}
+
+/* ----------------------------------------------------------
+   Challenge
+   No fluorescent panel.
+   Only a faint warm signal near the active edge.
+   ---------------------------------------------------------- */
+
+.adb-app .adb-challenge.open {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(201, 255, 53, .045),
+      #ffffff 28%
+    );
+}
+
+.adb-app .adb-challenge.resolved {
+  background:
+    var(--hotel-ivory);
+}
+
+/* ----------------------------------------------------------
+   Brand anchors
+   ---------------------------------------------------------- */
+
+.adb-app .adb-principle,
+.adb-app .adb-footer {
+  background:
+    var(--ink);
+}
+
+.adb-app .adb-principle span {
+  color:
+    var(--lime);
 }
