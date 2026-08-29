@@ -915,10 +915,19 @@ export default function DelegationApp() {
             AI DELEGATION BOUNDARY
           </span>
 
-          <h1>
-            {lang === "ja"
-              ? "AIに任せてよい範囲を検討する。"
-              : "Decide what an AI agent may do on its own."}
+          <h1 className="adb-hero-title">
+            {lang === "ja" ? (
+              "AIに任せてよい範囲を検討する。"
+            ) : (
+              <>
+                <span className="adb-hero-title-line">
+                  Decide what an AI agent
+                </span>{" "}
+                <span className="adb-hero-title-line">
+                  may do on its own.
+                </span>
+              </>
+            )}
           </h1>
 
           <p>

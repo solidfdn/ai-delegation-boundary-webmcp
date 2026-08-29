@@ -2517,3 +2517,254 @@ select:focus-visible {
     gap: 8px;
   }
 }
+/* ==========================================================
+   SOLIFAN HERO COMPOSITION V5
+   Intentional typography, balance and revision placement.
+   ========================================================== */
+
+/*
+ * Desktop:
+ * The headline and Revision state form one composition.
+ * The title no longer wraps by accident.
+ */
+
+.adb-app .adb-hero {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    clamp(220px, 18vw, 270px);
+
+  gap:
+    clamp(
+      42px,
+      6vw,
+      104px
+    );
+
+  align-items: center;
+
+  padding:
+    clamp(52px, 4.6vw, 70px)
+    clamp(30px, 5vw, 78px)
+    clamp(48px, 4.2vw, 62px);
+}
+
+.adb-app .adb-hero-copy {
+  width: 100%;
+  max-width: 920px;
+}
+
+.adb-app .adb-hero-copy::before {
+  margin-bottom: 24px;
+}
+
+.adb-app .adb-hero-title {
+  width: 100%;
+  max-width: none;
+
+  margin:
+    10px 0 19px;
+
+  font-size:
+    clamp(
+      46px,
+      4vw,
+      66px
+    );
+
+  font-weight: 400;
+  line-height: .99;
+
+  letter-spacing:
+    -.043em;
+
+  text-wrap: balance;
+}
+
+.adb-app .adb-hero-title-line {
+  display: block;
+
+  white-space: nowrap;
+}
+
+.adb-app .adb-hero-copy > p {
+  max-width: 760px;
+
+  font-size: 14px;
+  line-height: 1.68;
+}
+
+/*
+ * Revision is not a floating sidebar.
+ * It is the counterweight to the headline.
+ */
+
+.adb-app .adb-revision-state {
+  justify-self: end;
+  align-self: center;
+
+  width: 100%;
+  max-width: 270px;
+
+  margin-top: 22px;
+
+  padding-top: 18px;
+}
+
+.adb-app .adb-revision-state small {
+  max-width: 220px;
+}
+
+/* ==========================================================
+   Portrait desktop / narrow laptop
+   ========================================================== */
+
+@media (
+  min-width: 901px
+) and (
+  max-width: 1180px
+) {
+  .adb-app .adb-hero {
+    grid-template-columns:
+      minmax(0, 1fr)
+      220px;
+
+    gap: 38px;
+
+    padding:
+      48px
+      clamp(30px, 4vw, 52px)
+      44px;
+  }
+
+  .adb-app .adb-hero-title {
+    font-size:
+      clamp(
+        44px,
+        5.05vw,
+        54px
+      );
+
+    line-height: 1;
+  }
+
+  .adb-app .adb-hero-copy > p {
+    max-width: 650px;
+
+    font-size: 13px;
+  }
+
+  .adb-app .adb-revision-state {
+    max-width: 220px;
+    margin-top: 18px;
+  }
+
+  /*
+   * Preserve the deliberate semantic break:
+   *
+   * Decide what an AI agent
+   * may do on its own.
+   */
+  .adb-app .adb-hero-title-line {
+    white-space: nowrap;
+  }
+}
+
+/* ==========================================================
+   Mobile / genuinely narrow viewport
+   ========================================================== */
+
+@media (max-width: 900px) {
+  .adb-app .adb-hero {
+    grid-template-columns:
+      1fr;
+
+    gap: 34px;
+
+    padding:
+      38px 20px 34px;
+  }
+
+  .adb-app .adb-hero-copy {
+    max-width: 720px;
+  }
+
+  .adb-app .adb-hero-title {
+    max-width: 14ch;
+
+    margin:
+      9px 0 17px;
+
+    font-size:
+      clamp(
+        38px,
+        8.7vw,
+        50px
+      );
+
+    line-height: 1;
+
+    letter-spacing:
+      -.038em;
+
+    text-wrap: balance;
+  }
+
+  /*
+   * On genuinely narrow screens, release the fixed
+   * desktop line break and let the phrase balance itself.
+   */
+  .adb-app .adb-hero-title-line {
+    display: inline;
+    white-space: normal;
+  }
+
+  .adb-app .adb-hero-copy > p {
+    max-width: 620px;
+
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .adb-app .adb-revision-state {
+    justify-self: stretch;
+    align-self: auto;
+
+    width: min(100%, 320px);
+    max-width: 320px;
+
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 520px) {
+  .adb-app .adb-hero {
+    gap: 30px;
+
+    padding:
+      34px 18px 30px;
+  }
+
+  .adb-app .adb-hero-title {
+    max-width: 12.5ch;
+
+    font-size:
+      clamp(
+        36px,
+        10.5vw,
+        44px
+      );
+
+    line-height: 1.01;
+  }
+
+  .adb-app .adb-hero-copy > p {
+    font-size: 13px;
+  }
+
+  .adb-app .adb-revision-state {
+    width: min(100%, 285px);
+    max-width: 285px;
+  }
+}
