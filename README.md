@@ -39,7 +39,40 @@ WebMCP gives the agent structured access through five normal tools:
 
 A sixth tool, `apply_approved_revision`, is not registered or exposed until a human approves the exact revision. It provides an optional Agent application path and disappears again after application.
 
+> **Human approval changes the agent's capability surface.**
 
+## Architecture
+
+```mermaid
+flowchart TB
+    Human["Human authority"]
+    Agent["ChatGPT or compatible Agent"]
+
+    subgraph Browser["Static browser app on GitHub Pages — system of record; no AI backend"]
+        direction TB
+        UI["React human workspace"]
+        MCP["WebMCP surface: five normal tools plus conditional apply"]
+        Core["Deterministic core: invariants, regressions, challenge gate, fingerprint"]
+        Apply["Shared apply coordinator: lock, exact-state recheck, commit"]
+        State["DelegationWorkspace and sessionStorage"]
+    end
+
+    Human -->|"Scope, judge, edit, approve"| UI
+    Agent -->|"Calls registered site tools"| MCP
+    UI -->|"Human-authorized actions"| Core
+    MCP -->|"Inspect, propose, challenge, review"| Core
+    Core <--> State
+    State -->|"APPROVED exposes; APPLIED removes"| MCP
+    UI -->|"Primary direct Apply"| Apply
+    MCP -->|"Optional exact Apply"| Apply
+    Apply -->|"Revalidate revision and SHA-256"| Core
+    Apply -->|"Commit APPLIED"| State
+    State -->|"Render Completion Report"| UI
+```
+
+A static browser application owns delegation state and human authority. A compatible Agent can call only the tools currently registered by the page. Exact human approval exposes the sixth apply capability; both direct and optional Agent application pass through the same coordinator, which revalidates the revision ID and SHA-256 fingerprint before committing `APPLIED`.
+
+## Human + Agent workflow
 
 **Human scopes the work -> Agent proposes -> Agent challenges -> Human judges -> Agent re-tests -> Human approves -> Human applies the exact approved revision -> Completion report**
 
