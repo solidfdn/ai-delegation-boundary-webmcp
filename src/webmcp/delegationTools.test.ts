@@ -5,11 +5,17 @@ import {
 } from "vitest";
 
 import {
+  applyApprovedRevision as applyApprovedRevisionTransition,
   approveCurrentRevision,
   createEditedRevision,
   getCurrentRevision,
   reviewRevision
 } from "../core/delegationEngine";
+
+import {
+  createApprovedRevisionApplyCoordinator,
+  type ApprovedRevisionTransition
+} from "../core/approvedRevisionApplication";
 
 import type {
   DelegationWorkspace
@@ -37,9 +43,43 @@ function cloneWorkspace():
   ) as DelegationWorkspace;
 }
 
-function createHarness() {
+function createHarness(
+  transition?:
+    ApprovedRevisionTransition
+) {
   let workspace =
     cloneWorkspace();
+
+  let applicationCommitCount =
+    0;
+
+  const now = () =>
+    "2026-08-29T10:00:00.000Z";
+
+  const applyCoordinator =
+    createApprovedRevisionApplyCoordinator({
+      getWorkspace: () =>
+        workspace,
+
+      commitWorkspace: (
+        expected,
+        next
+      ) => {
+        if (
+          workspace !== expected
+        ) {
+          return false;
+        }
+
+        applicationCommitCount +=
+          1;
+        workspace = next;
+        return true;
+      },
+
+      now,
+      transition
+    });
 
   const actions =
     createDelegationBoundaryToolActions(
@@ -49,12 +89,18 @@ function createHarness() {
         workspace = next;
       },
 
-      () =>
-        "2026-08-29T10:00:00.000Z"
+      now,
+
+      applyCoordinator
     );
 
   return {
     actions,
+    applyCoordinator,
+
+    get applicationCommitCount() {
+      return applicationCommitCount;
+    },
 
     get workspace() {
       return workspace;
@@ -67,6 +113,38 @@ function createHarness() {
       workspace = next;
     }
   };
+}
+
+function deferred() {
+  let release:
+    () => void =
+      () => {};
+
+  const promise =
+    new Promise<void>(
+      (resolve) => {
+        release = resolve;
+      }
+    );
+
+  return {
+    promise,
+    release
+  };
+}
+
+function resultStatus(
+  result: unknown
+): unknown {
+  if (
+    !result ||
+    typeof result !== "object" ||
+    !("status" in result)
+  ) {
+    return undefined;
+  }
+
+  return result.status;
 }
 
 function resolveChallengesAndReview(
@@ -374,13 +452,7 @@ describe(
           });
 
         expect(
-          (
-            result as
-              Record<
-                string,
-                unknown
-              >
-          ).status
+          resultStatus(result)
         ).toBe(
           "success"
         );
@@ -477,13 +549,7 @@ describe(
           });
 
         expect(
-          (
-            result as
-              Record<
-                string,
-                unknown
-              >
-          ).status
+          resultStatus(result)
         ).toBe(
           "error"
         );
@@ -543,13 +609,7 @@ describe(
           });
 
         expect(
-          (
-            result as
-              Record<
-                string,
-                unknown
-              >
-          ).status
+          resultStatus(result)
         ).toBe(
           "success"
         );
@@ -636,13 +696,7 @@ describe(
           );
 
         expect(
-          (
-            result as
-              Record<
-                string,
-                unknown
-              >
-          ).status
+          resultStatus(result)
         ).toBe(
           "blocked"
         );
@@ -702,13 +756,7 @@ describe(
           );
 
         expect(
-          (
-            result as
-              Record<
-                string,
-                unknown
-              >
-          ).status
+          resultStatus(result)
         ).toBe(
           "success"
         );
@@ -761,13 +809,7 @@ describe(
           );
 
         expect(
-          (
-            result as
-              Record<
-                string,
-                unknown
-              >
-          ).status
+          resultStatus(result)
         ).toBe(
           "blocked"
         );
@@ -779,6 +821,381 @@ describe(
         ).not.toBe(
           "APPLIED"
         );
+      }
+    );
+
+    it(
+      "blocks WebMCP while the Human direct application owns the shared coordinator",
+      async () => {
+        const gate = deferred();
+        let transitionCount = 0;
+
+        const harness =
+          createHarness(
+            async (
+              workspace,
+              appliedAt
+            ) => {
+              transitionCount += 1;
+              await gate.promise;
+
+              return applyApprovedRevisionTransition(
+                workspace,
+                appliedAt
+              );
+            }
+          );
+
+        harness.workspace =
+          await approveCurrentRevision(
+            resolveChallengesAndReview(
+              harness.workspace
+            )
+          );
+
+        const directApplication =
+          harness.applyCoordinator
+            .apply();
+
+        const applyTool =
+          createApplyApprovedRevisionToolDefinition(
+            harness.actions
+          );
+
+        const agentResult =
+          await applyTool.execute(
+            {}
+          );
+
+        gate.release();
+        await directApplication;
+
+        expect(agentResult).toMatchObject({
+          status: "blocked",
+          code:
+            "APPLICATION_IN_PROGRESS"
+        });
+
+        expect(transitionCount).toBe(1);
+        expect(
+          harness
+            .applicationCommitCount
+        ).toBe(1);
+        expect(
+          getCurrentRevision(
+            harness.workspace
+          ).status
+        ).toBe("APPLIED");
+      }
+    );
+
+    it(
+      "blocks Human direct application while WebMCP owns the shared coordinator",
+      async () => {
+        const gate = deferred();
+        let transitionCount = 0;
+
+        const harness =
+          createHarness(
+            async (
+              workspace,
+              appliedAt
+            ) => {
+              transitionCount += 1;
+              await gate.promise;
+
+              return applyApprovedRevisionTransition(
+                workspace,
+                appliedAt
+              );
+            }
+          );
+
+        harness.workspace =
+          await approveCurrentRevision(
+            resolveChallengesAndReview(
+              harness.workspace
+            )
+          );
+
+        const applyTool =
+          createApplyApprovedRevisionToolDefinition(
+            harness.actions
+          );
+
+        const agentApplication =
+          Promise.resolve(
+            applyTool.execute({})
+          );
+
+        const directError =
+          await harness
+            .applyCoordinator
+            .apply()
+            .then(
+              () => null,
+              (error: unknown) =>
+                error
+            );
+
+        gate.release();
+
+        const agentResult =
+          await agentApplication;
+
+        expect(directError).toMatchObject({
+          code:
+            "APPLICATION_IN_PROGRESS"
+        });
+        expect(agentResult).toMatchObject({
+          status: "success"
+        });
+        expect(transitionCount).toBe(1);
+        expect(
+          harness
+            .applicationCommitCount
+        ).toBe(1);
+      }
+    );
+
+    it(
+      "allows only one concurrent WebMCP application to commit",
+      async () => {
+        const gate = deferred();
+        let transitionCount = 0;
+
+        const harness =
+          createHarness(
+            async (
+              workspace,
+              appliedAt
+            ) => {
+              transitionCount += 1;
+              await gate.promise;
+
+              return applyApprovedRevisionTransition(
+                workspace,
+                appliedAt
+              );
+            }
+          );
+
+        harness.workspace =
+          await approveCurrentRevision(
+            resolveChallengesAndReview(
+              harness.workspace
+            )
+          );
+
+        const applyTool =
+          createApplyApprovedRevisionToolDefinition(
+            harness.actions
+          );
+
+        const winner =
+          Promise.resolve(
+            applyTool.execute({})
+          );
+
+        const loser =
+          await applyTool.execute(
+            {}
+          );
+
+        gate.release();
+
+        const winnerResult =
+          await winner;
+
+        expect(winnerResult).toMatchObject({
+          status: "success"
+        });
+        expect(loser).toMatchObject({
+          status: "blocked",
+          code:
+            "APPLICATION_IN_PROGRESS"
+        });
+        expect(transitionCount).toBe(1);
+        expect(
+          harness
+            .applicationCommitCount
+        ).toBe(1);
+      }
+    );
+
+    it(
+      "rejects a verified result if the workspace changes before commit",
+      async () => {
+        const gate = deferred();
+
+        const harness =
+          createHarness(
+            async (
+              workspace,
+              appliedAt
+            ) => {
+              await gate.promise;
+
+              return applyApprovedRevisionTransition(
+                workspace,
+                appliedAt
+              );
+            }
+          );
+
+        harness.workspace =
+          await approveCurrentRevision(
+            resolveChallengesAndReview(
+              harness.workspace
+            )
+          );
+
+        const pending =
+          harness.actions
+            .applyApprovedRevision();
+
+        const replacement =
+          createEditedRevision(
+            harness.workspace,
+            "HUMAN",
+            "Human changed the workspace during application",
+            (revision) => {
+              revision.boundary.label =
+                "Replacement boundary";
+            }
+          );
+
+        harness.workspace =
+          replacement;
+        gate.release();
+
+        const result =
+          await pending;
+
+        expect(result).toMatchObject({
+          status: "blocked",
+          code:
+            "WORKSPACE_CHANGED_DURING_APPLICATION"
+        });
+        expect(
+          harness.workspace
+        ).toBe(replacement);
+        expect(
+          harness
+            .applicationCommitCount
+        ).toBe(0);
+        expect(
+          getCurrentRevision(
+            harness.workspace
+          ).boundary.label
+        ).toBe(
+          "Replacement boundary"
+        );
+      }
+    );
+
+    it(
+      "releases the coordinator after a failed transition so the Human can retry",
+      async () => {
+        let transitionCount = 0;
+
+        const harness =
+          createHarness(
+            async (
+              workspace,
+              appliedAt
+            ) => {
+              transitionCount += 1;
+
+              if (
+                transitionCount === 1
+              ) {
+                throw new Error(
+                  "Injected transition failure"
+                );
+              }
+
+              return applyApprovedRevisionTransition(
+                workspace,
+                appliedAt
+              );
+            }
+          );
+
+        harness.workspace =
+          await approveCurrentRevision(
+            resolveChallengesAndReview(
+              harness.workspace
+            )
+          );
+
+        const firstResult =
+          await harness.actions
+            .applyApprovedRevision();
+
+        expect(firstResult).toMatchObject({
+          status: "blocked",
+          code:
+            "APPROVED_REVISION_NOT_APPLIED",
+          message:
+            "Injected transition failure"
+        });
+
+        await harness.applyCoordinator
+          .apply();
+
+        expect(transitionCount).toBe(2);
+        expect(
+          harness
+            .applicationCommitCount
+        ).toBe(1);
+        expect(
+          getCurrentRevision(
+            harness.workspace
+          ).status
+        ).toBe("APPLIED");
+      }
+    );
+
+    it(
+      "rejects sequential reapplication without changing the original application record",
+      async () => {
+        const harness =
+          createHarness();
+
+        harness.workspace =
+          await approveCurrentRevision(
+            resolveChallengesAndReview(
+              harness.workspace
+            )
+          );
+
+        await harness.applyCoordinator
+          .apply();
+
+        const appliedAt =
+          harness.workspace
+            .application
+            ?.appliedAt;
+
+        const result =
+          await harness.actions
+            .applyApprovedRevision();
+
+        expect(result).toMatchObject({
+          status: "blocked",
+          code:
+            "APPROVED_REVISION_NOT_APPLIED"
+        });
+        expect(
+          harness.workspace
+            .application
+            ?.appliedAt
+        ).toBe(appliedAt);
+        expect(
+          harness
+            .applicationCommitCount
+        ).toBe(1);
       }
     );
   }

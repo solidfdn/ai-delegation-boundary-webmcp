@@ -1,10 +1,15 @@
 import {
-  applyApprovedRevision,
   createBoundaryRevision,
   createEditedRevision,
   getCurrentRevision,
   reviewRevision
 } from "../core/delegationEngine";
+
+import {
+  ApprovedRevisionApplyError,
+  createApprovedRevisionApplyCoordinator,
+  type ApprovedRevisionApplyCoordinator
+} from "../core/approvedRevisionApplication";
 
 import type {
   AgentChallenge,
@@ -41,6 +46,31 @@ export interface AddChallengeInput {
   suggestedOutcome?: DelegationOutcome;
 }
 
+export interface ApplyApprovedRevisionSuccess {
+  status: "success";
+  action:
+    "APPROVED_REVISION_APPLIED";
+  revision_id: string;
+  version: number;
+  applied_at:
+    | string
+    | undefined;
+  authorization: string;
+}
+
+export interface ApplyApprovedRevisionBlocked {
+  status: "blocked";
+  code:
+    | "APPLICATION_IN_PROGRESS"
+    | "WORKSPACE_CHANGED_DURING_APPLICATION"
+    | "APPROVED_REVISION_NOT_APPLIED";
+  message: string;
+}
+
+export type ApplyApprovedRevisionActionResult =
+  | ApplyApprovedRevisionSuccess
+  | ApplyApprovedRevisionBlocked;
+
 export interface DelegationBoundaryToolActions {
   inspectWorkspace: () => unknown;
 
@@ -57,7 +87,7 @@ export interface DelegationBoundaryToolActions {
   inspectRevisionHistory: () => unknown;
 
   applyApprovedRevision: () =>
-    Promise<unknown>;
+    Promise<ApplyApprovedRevisionActionResult>;
 }
 
 type GetWorkspace =
@@ -484,8 +514,31 @@ createDelegationBoundaryToolActions(
   getWorkspace: GetWorkspace,
   setWorkspace: SetWorkspace,
   now: () => string =
-    () => new Date().toISOString()
+    () => new Date().toISOString(),
+  sharedApplyCoordinator?:
+    ApprovedRevisionApplyCoordinator
 ): DelegationBoundaryToolActions {
+  const applyCoordinator =
+    sharedApplyCoordinator ??
+    createApprovedRevisionApplyCoordinator({
+      getWorkspace,
+      commitWorkspace: (
+        expected,
+        next
+      ) => {
+        if (
+          getWorkspace() !==
+          expected
+        ) {
+          return false;
+        }
+
+        setWorkspace(next);
+        return true;
+      },
+      now
+    });
+
   return {
     inspectWorkspace: () => {
       const workspace =
@@ -1067,16 +1120,9 @@ createDelegationBoundaryToolActions(
     applyApprovedRevision:
       async () => {
         try {
-          const workspace =
-            getWorkspace();
-
           const next =
-            await applyApprovedRevision(
-              workspace,
-              now()
-            );
-
-          setWorkspace(next);
+            await applyCoordinator
+              .apply();
 
           const current =
             getCurrentRevision(
@@ -1105,6 +1151,11 @@ createDelegationBoundaryToolActions(
         } catch (error) {
           return {
             status: "blocked",
+            code:
+              error instanceof
+                ApprovedRevisionApplyError
+                ? error.code
+                : "APPROVED_REVISION_NOT_APPLIED",
             message:
               error instanceof Error
                 ? error.message

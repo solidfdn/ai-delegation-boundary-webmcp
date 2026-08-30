@@ -7,11 +7,14 @@ import {
 } from "react";
 
 import {
-  applyApprovedRevision,
   approveCurrentRevision,
   getCurrentRevision,
   reviewRevision
 } from "./core/delegationEngine";
+
+import {
+  createApprovedRevisionApplyCoordinator
+} from "./core/approvedRevisionApplication";
 
 import {
   editBoundaryConditionAsHuman,
@@ -453,9 +456,6 @@ export default function DelegationApp() {
   const workspaceRef =
     useRef(workspace);
 
-  workspaceRef.current =
-    workspace;
-
   useEffect(() => {
     try {
       window.sessionStorage.setItem(
@@ -520,32 +520,69 @@ export default function DelegationApp() {
       []
     );
 
+  const applyCoordinator =
+    useMemo(
+      () =>
+        createApprovedRevisionApplyCoordinator({
+          getWorkspace: () =>
+            workspaceRef.current,
+
+          commitWorkspace: (
+            expected,
+            next
+          ) => {
+            if (
+              workspaceRef.current !==
+              expected
+            ) {
+              return false;
+            }
+
+            updateWorkspace(next);
+            return true;
+          }
+        }),
+      [updateWorkspace]
+    );
+
+  const boundaryActions =
+    useMemo(
+      () =>
+        createDelegationBoundaryToolActions(
+          () =>
+            workspaceRef.current,
+
+          updateWorkspace,
+
+          undefined,
+
+          applyCoordinator
+        ),
+      [
+        applyCoordinator,
+        updateWorkspace
+      ]
+    );
+
   const toolActions =
     useMemo(
       () => {
-        const actions =
-          createDelegationBoundaryToolActions(
-            () =>
-              workspaceRef.current,
-
-            updateWorkspace
-          );
-
         return {
           inspectWorkspace: () =>
             recordToolResult(
-              actions.inspectWorkspace()
+              boundaryActions
+                .inspectWorkspace()
             ),
 
           proposeBoundaryRevision: (
             input:
               Parameters<
-                typeof actions
+                typeof boundaryActions
                   .proposeBoundaryRevision
               >[0]
           ) =>
             recordToolResult(
-              actions
+              boundaryActions
                 .proposeBoundaryRevision(
                   input
                 )
@@ -554,38 +591,49 @@ export default function DelegationApp() {
           addChallenge: (
             input:
               Parameters<
-                typeof actions.addChallenge
+                typeof boundaryActions.addChallenge
               >[0]
           ) =>
             recordToolResult(
-              actions.addChallenge(
+              boundaryActions.addChallenge(
                 input
               )
             ),
 
           reviewCurrentRevision: () =>
             recordToolResult(
-              actions
+              boundaryActions
                 .reviewCurrentRevision()
             ),
 
           inspectRevisionHistory: () =>
             recordToolResult(
-              actions
+              boundaryActions
                 .inspectRevisionHistory()
             ),
 
           applyApprovedRevision:
-            async () =>
-              recordToolResult(
-                await actions
-                  .applyApprovedRevision()
-              )
+            async () => {
+              const result =
+                await boundaryActions
+                  .applyApprovedRevision();
+
+              if (
+                result.status ===
+                "success"
+              ) {
+                setMessage(null);
+              }
+
+              return recordToolResult(
+                result
+              );
+            }
         };
       },
       [
+        boundaryActions,
         recordToolResult,
-        updateWorkspace
       ]
     );
 
@@ -1142,25 +1190,11 @@ export default function DelegationApp() {
       setDirectApplyBusy(true);
       setMessage(null);
 
-      const source =
-        workspaceRef.current;
-
       try {
         const applied =
-          await applyApprovedRevision(
-            source
-          );
+          await applyCoordinator
+            .apply();
 
-        if (
-          workspaceRef.current !==
-          source
-        ) {
-          throw new Error(
-            "The workspace changed while the approved revision was being verified. Review the current state before applying again."
-          );
-        }
-
-        updateWorkspace(applied);
         setLastAgentError(null);
 
         setMessage(
