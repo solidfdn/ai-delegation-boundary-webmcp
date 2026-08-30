@@ -28,7 +28,7 @@ AI Delegation Boundary treats changes to agent authority like changes to product
 
 ## Why WebMCP
 
-The web application is the system of record for delegation state and human authority.
+The browser-resident web application—not the Agent—is the system of record for the current demo workspace.
 
 WebMCP gives the agent structured access through five normal tools:
 1. `inspect_delegation_workspace`
@@ -37,11 +37,9 @@ WebMCP gives the agent structured access through five normal tools:
 4. `review_delegation_revision`
 5. `inspect_revision_history`
 
-A sixth tool, `apply_approved_revision`, does not exist until a human approves the exact revision. It provides an optional Agent application path and disappears again after application.
+A sixth tool, `apply_approved_revision`, is not registered or exposed until a human approves the exact revision. It provides an optional Agent application path and disappears again after application.
 
-> **Human approval changes the agent's capability surface.**
 
-## Human + Agent workflow
 
 **Human scopes the work -> Agent proposes -> Agent challenges -> Human judges -> Agent re-tests -> Human approves -> Human applies the exact approved revision -> Completion report**
 
@@ -80,13 +78,15 @@ Human approval is bound to a SHA-256 fingerprint of the exact reviewable state. 
 
 `READY_FOR_DECISION` is not approval.
 
-## Architecture
+## Implementation stack
 
 - React 19
 - TypeScript
 - Vite
 - Vitest
 - WebMCP via `document.modelContext`
+- Browser `sessionStorage`
+- Web Crypto SHA-256
 - GitHub Pages
 
 The Challenge build passes the automated test suite covering delegation evaluation, human authority, task scope, mandatory fresh Agent Challenges, Guardrail invariants, regression checks, approval fingerprints, direct application guidance, and WebMCP actions.
