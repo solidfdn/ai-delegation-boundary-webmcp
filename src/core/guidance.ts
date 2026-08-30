@@ -1,6 +1,13 @@
+import {
+  conditionsMatch
+} from "./delegationEngine";
+
 import type {
+  BoundaryRule,
+  DecisionFacts,
   DelegationRevision,
-  DelegationWorkspace
+  DelegationWorkspace,
+  FactorDefinition
 } from "./types";
 
 export type ApplyToolState =
@@ -56,14 +63,29 @@ export interface GuidanceState {
   owner: string;
   action: string;
   detail: string;
-  where?: string;
+
+  /**
+   * Exact destination for the next action.
+   * Browser actions use:
+   *   Section number · Section name → control / object
+   * ChatGPT handoffs use:
+   *   ChatGPT Desktop → current conversation
+   */
+  where: string;
+
+  /**
+   * Human / recovery states can expose one contextual
+   * in-page navigation button. ChatGPT handoffs do not.
+   */
+  goLabel?: string;
+
   prompt?: string;
   returnWhen?: string;
   targetId: string;
 }
 
 export const INITIAL_CHATGPT_PROMPT =
-  "Help me determine a safe delegation boundary for the work defined in this page. Use this page's available tools and continue until human judgment is required.";
+  "Help me determine a safe delegation boundary for the work already defined in this workspace. Use the available site tools and continue until human judgment is required.";
 
 export const CONTINUE_CHATGPT_PROMPT =
   "Continue from the current workspace.";
@@ -93,51 +115,151 @@ function state(
   return value;
 }
 
+function firstMatchingRule(
+  revision: DelegationRevision,
+  facts: DecisionFacts,
+  factors: FactorDefinition[]
+): BoundaryRule | undefined {
+  return [...revision.boundary.rules]
+    .sort(
+      (left, right) =>
+        left.priority - right.priority
+    )
+    .find(
+      (rule) =>
+        conditionsMatch(
+          facts,
+          rule.when,
+          factors
+        )
+    );
+}
+
+function conflictingBoundaryTarget(
+  workspace: DelegationWorkspace,
+  revision: DelegationRevision
+): {
+  where: string;
+  targetId: string;
+  goLabel: string;
+} {
+  let facts:
+    | DecisionFacts
+    | undefined;
+
+  const violatedGuardrail =
+    revision.review?.guardrails.find(
+      (result) =>
+        result.violated &&
+        result.witnessFacts
+    );
+
+  if (
+    violatedGuardrail
+      ?.witnessFacts
+  ) {
+    facts =
+      violatedGuardrail
+        .witnessFacts;
+  }
+
+  if (!facts) {
+    const failedRegression =
+      revision.review?.regressions.find(
+        (result) =>
+          !result.passed
+      );
+
+    const knownDecision =
+      revision.knownDecisions.find(
+        (decision) =>
+          decision.id ===
+          failedRegression
+            ?.knownDecisionId
+      );
+
+    facts =
+      knownDecision?.facts;
+  }
+
+  const rule =
+    facts
+      ? firstMatchingRule(
+          revision,
+          facts,
+          workspace.factors
+        )
+      : undefined;
+
+  if (rule) {
+    return {
+      where:
+        `01 · Current boundary → ${rule.label}`,
+      targetId:
+        `boundary-rule-${rule.id}`,
+      goLabel:
+        "Go to conflicting rule"
+    };
+  }
+
+  return {
+    where:
+      "01 · Current boundary → boundary rules",
+    targetId:
+      "next-boundary",
+    goLabel:
+      "Go to boundary rules"
+  };
+}
+
 export function deriveGuidanceState(
   input: GuidanceInput
 ): GuidanceState {
-  const workspace = input.workspace;
+  const workspace =
+    input.workspace;
+
   const current =
-    currentRevision(workspace);
+    currentRevision(
+      workspace
+    );
 
   const taskConfigured =
     workspace.task.title
       .trim()
       .length > 0;
 
-  /*
-   * Human task scope comes first even when WebMCP is not
-   * available yet. The browser remains usable without an Agent.
-   */
   if (!taskConfigured) {
     return state({
       id: "S01_SCOPE_WORK",
       key: "scope",
       mode: "HUMAN",
       owner: "NEXT · HUMAN",
-      action: "Start with this work",
+      action:
+        "Start with this work",
       detail:
         "Define the work before any Agent can change delegation authority.",
-      where: "This page",
+      where:
+        "01 · Current boundary → Work to delegate",
+      goLabel:
+        "Go to Work to delegate",
       targetId: "next-task"
     });
   }
 
-  /*
-   * A tool error is recoverable. The browser state remains
-   * authoritative and must not be reset because an Agent call failed.
-   */
   if (input.lastAgentError) {
     return state({
       id: "S22_AGENT_TOOL_ERROR",
       key: "agent-error",
       mode: "RECOVERY",
       owner: "RECOVERY",
-      action: "Retry from the current workspace",
+      action:
+        "Retry from the current workspace",
       detail:
         input.lastAgentError,
-      where: "ChatGPT desktop app",
-      prompt: CONTINUE_CHATGPT_PROMPT,
+      where:
+        "ChatGPT Desktop → current conversation",
+      prompt:
+        CONTINUE_CHATGPT_PROMPT,
       returnWhen:
         "Return here after ChatGPT completes the retry or asks for human judgment.",
       targetId: "next-agent"
@@ -145,73 +267,103 @@ export function deriveGuidanceState(
   }
 
   /*
-   * Registration is asynchronous. Do not mislabel the transient
-   * initial zero as "WebMCP not detected".
+   * Registration is asynchronous. A transient zero must never
+   * be presented as "WebMCP not detected".
    */
   if (!input.baseToolsResolved) {
     return state({
-      id: "S02_CHECKING_WEBMCP",
+      id:
+        "S02_CHECKING_WEBMCP",
       key: "checking-webmcp",
       mode: "RECOVERY",
       owner: "CHECKING",
-      action: "Checking WebMCP availability",
+      action:
+        "Checking WebMCP availability",
       detail:
         "No action is required while this page registers its site tools.",
-      where: "This page",
+      where:
+        "03 · Revision history → WebMCP",
+      goLabel:
+        "Go to WebMCP status",
       targetId: "next-agent"
     });
   }
 
-  if (input.baseToolCount === 0) {
+  if (
+    input.baseToolCount === 0
+  ) {
     return state({
-      id: "S03_WEBMCP_NOT_DETECTED",
+      id:
+        "S03_WEBMCP_NOT_DETECTED",
       key: "webmcp-missing",
       mode: "RECOVERY",
-      owner: "SETUP",
-      action: "Open this page in ChatGPT Desktop",
+      owner: "SETUP REQUIRED",
+      action:
+        "Open this page in ChatGPT Desktop",
       detail:
         "The Human workspace works here, but Agent handoff requires WebMCP site tools.",
       where:
-        "ChatGPT desktop app · built-in browser",
+        "03 · Revision history → WebMCP",
+      goLabel:
+        "Go to WebMCP status",
       returnWhen:
-        "Return when this page shows 5 WebMCP tools available.",
+        "Continue only when this page shows 5 WebMCP tools available.",
       targetId: "next-agent"
     });
   }
 
-  if (input.baseToolCount < 5) {
+  if (
+    input.baseToolCount < 5
+  ) {
     return state({
-      id: "S04_WEBMCP_DEGRADED",
+      id:
+        "S04_WEBMCP_DEGRADED",
       key: "webmcp-degraded",
       mode: "RECOVERY",
       owner: "RECOVERY",
-      action: "Reload before using the Agent",
+      action:
+        "Reload before using the Agent",
       detail:
         `Only ${input.baseToolCount} of 5 normal WebMCP tools registered. Do not start Agent work in a partial tool state.`,
-      where: "This page",
+      where:
+        "03 · Revision history → WebMCP",
+      goLabel:
+        "Go to WebMCP status",
       returnWhen:
         "Continue only when all 5 normal tools are available.",
       targetId: "next-agent"
     });
   }
 
-  if (current.status === "SUPERSEDED") {
+  if (
+    current.status ===
+    "SUPERSEDED"
+  ) {
     return state({
-      id: "S21_INVALID_CURRENT_STATE",
+      id:
+        "S21_INVALID_CURRENT_STATE",
       key: "invalid-current",
       mode: "RECOVERY",
       owner: "RECOVERY",
       action: "Start new work",
       detail:
         "A superseded revision cannot be the current workspace state.",
-      where: "This page",
-      targetId: "next-start-new"
+      where:
+        "Header → Start new work",
+      goLabel:
+        "Go to Start new work",
+      targetId:
+        "next-start-new"
     });
   }
 
-  if (current.status === "APPLIED") {
+  if (
+    current.status ===
+    "APPLIED"
+  ) {
     return state({
-      id: "S20_APPLIED_COMPLETE",
+      id:
+        "S20_APPLIED_COMPLETE",
       key: "complete",
       mode: "COMPLETE",
       owner: "COMPLETE",
@@ -219,36 +371,49 @@ export function deriveGuidanceState(
         `Revision ${current.version} applied`,
       detail:
         "The exact human-approved delegation state is now the applied state for this workspace.",
-      where: "This page",
-      targetId: "next-complete"
+      where:
+        "03 · Revision history → current revision",
+      targetId:
+        "next-current-revision"
     });
   }
 
-  if (current.status === "APPROVED") {
+  if (
+    current.status ===
+    "APPROVED"
+  ) {
     if (
       input.applyToolState ===
         "registering" ||
-      input.applyToolState === "idle"
+      input.applyToolState ===
+        "idle"
     ) {
       return state({
-        id: "S17_APPLY_TOOL_REGISTERING",
-        key: "apply-registering",
+        id:
+          "S17_APPLY_TOOL_REGISTERING",
+        key:
+          "apply-registering",
         mode: "RECOVERY",
         owner: "CHECKING",
         action:
           "Preparing the approved apply capability",
         detail:
           "Human approval is complete. The page is registering the additional WebMCP capability.",
-        where: "This page",
+        where:
+          "03 · Revision history → WebMCP",
+        goLabel:
+          "Go to WebMCP status",
         targetId: "next-agent"
       });
     }
 
     if (
-      input.applyToolState === "failed"
+      input.applyToolState ===
+      "failed"
     ) {
       return state({
-        id: "S19_APPLY_TOOL_FAILED",
+        id:
+          "S19_APPLY_TOOL_FAILED",
         key: "apply-failed",
         mode: "RECOVERY",
         owner: "RECOVERY",
@@ -256,7 +421,10 @@ export function deriveGuidanceState(
           "Reload before applying the approved revision",
         detail:
           "Human approval is preserved, but the additional apply capability did not register.",
-        where: "This page",
+        where:
+          "03 · Revision history → WebMCP",
+        goLabel:
+          "Go to WebMCP status",
         returnWhen:
           "Continue only when the WebMCP card shows 6 tools.",
         targetId: "next-agent"
@@ -264,16 +432,20 @@ export function deriveGuidanceState(
     }
 
     return state({
-      id: "S18_APPROVED_AGENT_HANDOFF",
+      id:
+        "S18_APPROVED_AGENT_HANDOFF",
       key: "apply",
       mode: "CHATGPT",
-      owner: "NEXT · CHATGPT",
+      owner:
+        "NEXT · CHATGPT",
       action:
         "Apply the human-approved revision",
       detail:
         "Human approval unlocked one additional WebMCP capability. No tool name needs to be typed.",
-      where: "ChatGPT desktop app",
-      prompt: CONTINUE_CHATGPT_PROMPT,
+      where:
+        "ChatGPT Desktop → current conversation",
+      prompt:
+        CONTINUE_CHATGPT_PROMPT,
       returnWhen:
         "Return here when the workspace shows Applied.",
       targetId: "next-agent"
@@ -294,7 +466,10 @@ export function deriveGuidanceState(
         `Approve revision ${current.version}`,
       detail:
         "Checks are complete. Final authority remains with the human.",
-      where: "This page",
+      where:
+        `02 · Review the change → Approve revision ${current.version}`,
+      goLabel:
+        "Go to approval",
       targetId: "next-approve"
     });
   }
@@ -302,99 +477,146 @@ export function deriveGuidanceState(
   const openChallenges =
     current.challenges.filter(
       (challenge) =>
-        challenge.status === "OPEN"
+        challenge.status ===
+        "OPEN"
     );
 
   const guardrailViolations =
-    current.review?.guardrails.filter(
-      (result) => result.violated
-    ).length ?? 0;
+    current.review
+      ?.guardrails
+      .filter(
+        (result) =>
+          result.violated
+      )
+      .length ?? 0;
 
   const regressions =
-    current.review?.regressions.filter(
-      (result) => !result.passed
-    ).length ?? 0;
+    current.review
+      ?.regressions
+      .filter(
+        (result) =>
+          !result.passed
+      )
+      .length ?? 0;
 
-  if (current.status === "BLOCKED") {
-    if (openChallenges.length > 0) {
+  if (
+    current.status ===
+    "BLOCKED"
+  ) {
+    if (
+      openChallenges.length > 0
+    ) {
       return state({
         id:
           "S12_BLOCKED_WITH_OPEN_CHALLENGE",
-        key: "blocked-open-challenge",
+        key:
+          "blocked-open-challenge",
         mode: "HUMAN",
         owner: "NEXT · HUMAN",
         action:
           "Resolve the open Agent Challenge first",
         detail:
           "The revision is blocked and still contains an unresolved question for human judgment.",
-        where: "This page",
-        targetId: "next-challenge"
+        where:
+          "02 · Review the change → Agent Challenges",
+        goLabel:
+          "Go to Agent Challenge",
+        targetId:
+          "next-challenge"
       });
     }
+
+    const conflict =
+      conflictingBoundaryTarget(
+        workspace,
+        current
+      );
 
     if (
       guardrailViolations > 0 &&
       regressions > 0
     ) {
       return state({
-        id: "S15_BLOCKED_BOTH",
+        id:
+          "S15_BLOCKED_BOTH",
         key: "blocked-both",
         mode: "HUMAN",
         owner: "NEXT · HUMAN",
         action:
-          "Adjust the highlighted boundary",
+          "Adjust the conflicting boundary rule",
         detail:
           "The current boundary conflicts with both a non-negotiable Guardrail and a prior Human Decision.",
-        where: "This page",
-        targetId: "next-boundary"
+        where: conflict.where,
+        goLabel:
+          conflict.goLabel,
+        targetId:
+          conflict.targetId
       });
     }
 
-    if (guardrailViolations > 0) {
+    if (
+      guardrailViolations > 0
+    ) {
       return state({
-        id: "S13_BLOCKED_GUARDRAIL",
-        key: "blocked-guardrail",
+        id:
+          "S13_BLOCKED_GUARDRAIL",
+        key:
+          "blocked-guardrail",
         mode: "HUMAN",
         owner: "NEXT · HUMAN",
         action:
-          "Adjust the highlighted boundary",
+          "Adjust the conflicting boundary rule",
         detail:
           "The current boundary violates a non-negotiable Guardrail.",
-        where: "This page",
-        targetId: "next-boundary"
+        where: conflict.where,
+        goLabel:
+          conflict.goLabel,
+        targetId:
+          conflict.targetId
       });
     }
 
     if (regressions > 0) {
       return state({
-        id: "S14_BLOCKED_REGRESSION",
-        key: "blocked-regression",
+        id:
+          "S14_BLOCKED_REGRESSION",
+        key:
+          "blocked-regression",
         mode: "HUMAN",
         owner: "NEXT · HUMAN",
         action:
-          "Adjust the highlighted boundary",
+          "Adjust the conflicting boundary rule",
         detail:
           "The current boundary conflicts with a Human Decision preserved from an earlier challenge.",
-        where: "This page",
-        targetId: "next-boundary"
+        where: conflict.where,
+        goLabel:
+          conflict.goLabel,
+        targetId:
+          conflict.targetId
       });
     }
 
     return state({
-      id: "S21_INVALID_CURRENT_STATE",
+      id:
+        "S21_INVALID_CURRENT_STATE",
       key: "invalid-current",
       mode: "RECOVERY",
       owner: "RECOVERY",
       action: "Start new work",
       detail:
         "The revision is Blocked without a recorded Guardrail violation or regression.",
-      where: "This page",
-      targetId: "next-start-new"
+      where:
+        "Header → Start new work",
+      goLabel:
+        "Go to Start new work",
+      targetId:
+        "next-start-new"
     });
   }
 
   if (
-    current.status === "NEEDS_REVIEW"
+    current.status ===
+    "NEEDS_REVIEW"
   ) {
     if (
       current.review &&
@@ -404,31 +626,44 @@ export function deriveGuidanceState(
       return state({
         id:
           "S11_INVARIANT_VERIFICATION_INCOMPLETE",
-        key: "verification-incomplete",
+        key:
+          "verification-incomplete",
         mode: "RECOVERY",
-        owner: "REVIEW REQUIRED",
+        owner:
+          "REVIEW REQUIRED",
         action:
           "This revision cannot be approved",
         detail:
-          "The Guardrail invariant check could not cover the complete decision domain. The product must not treat a partial check as approval-ready.",
-        where: "This page",
-        targetId: "next-review"
+          "The Guardrail invariant check could not cover the complete decision domain. A partial check is never treated as approval-ready.",
+        where:
+          "02 · Review the change → Guardrails",
+        goLabel:
+          "Go to Guardrails",
+        targetId:
+          "next-guardrails"
       });
     }
 
-    if (openChallenges.length > 0) {
+    if (
+      openChallenges.length > 0
+    ) {
       return state({
         id:
           "S10_REVIEW_HAS_OPEN_CHALLENGE",
-        key: "review-open-challenge",
+        key:
+          "review-open-challenge",
         mode: "HUMAN",
         owner: "NEXT · HUMAN",
         action:
           "Resolve the open Agent Challenge",
         detail:
           "Review cannot complete while a Challenge still requires human judgment.",
-        where: "This page",
-        targetId: "next-challenge"
+        where:
+          "02 · Review the change → Agent Challenges",
+        goLabel:
+          "Go to Agent Challenge",
+        targetId:
+          "next-challenge"
       });
     }
 
@@ -438,15 +673,19 @@ export function deriveGuidanceState(
       return state({
         id:
           "S09_REVIEW_NEEDS_CHALLENGE",
-        key: "review-needs-challenge",
+        key:
+          "review-needs-challenge",
         mode: "CHATGPT",
-        owner: "NEXT · CHATGPT",
+        owner:
+          "NEXT · CHATGPT",
         action:
           "Challenge this exact revision",
         detail:
           "A revision with zero Agent Challenges cannot become approval-ready.",
-        where: "ChatGPT desktop app",
-        prompt: CONTINUE_CHATGPT_PROMPT,
+        where:
+          "ChatGPT Desktop → current conversation",
+        prompt:
+          CONTINUE_CHATGPT_PROMPT,
         returnWhen:
           "Return here when a Human Decision appears.",
         targetId: "next-agent"
@@ -454,22 +693,32 @@ export function deriveGuidanceState(
     }
 
     return state({
-      id: "S21_INVALID_CURRENT_STATE",
+      id:
+        "S21_INVALID_CURRENT_STATE",
       key: "invalid-current",
       mode: "RECOVERY",
       owner: "RECOVERY",
       action: "Start new work",
       detail:
         "The review state does not map to a valid next action.",
-      where: "This page",
-      targetId: "next-start-new"
+      where:
+        "Header → Start new work",
+      goLabel:
+        "Go to Start new work",
+      targetId:
+        "next-start-new"
     });
   }
 
-  if (current.status === "DRAFT") {
-    if (openChallenges.length > 0) {
+  if (
+    current.status === "DRAFT"
+  ) {
+    if (
+      openChallenges.length > 0
+    ) {
       return state({
-        id: "S07_HUMAN_CHALLENGE",
+        id:
+          "S07_HUMAN_CHALLENGE",
         key: "decision",
         mode: "HUMAN",
         owner: "NEXT · HUMAN",
@@ -477,8 +726,12 @@ export function deriveGuidanceState(
           "Choose one Human Decision outcome",
         detail:
           "Allow agent-only · Keep human review · Do not delegate",
-        where: "This page",
-        targetId: "next-challenge"
+        where:
+          "02 · Review the change → Agent Challenges",
+        goLabel:
+          "Go to Agent Challenge",
+        targetId:
+          "next-challenge"
       });
     }
 
@@ -486,35 +739,45 @@ export function deriveGuidanceState(
       current.challenges.length > 0
     ) {
       return state({
-        id: "S08_CONTINUE_TO_REVIEW",
-        key: "continue-review",
+        id:
+          "S08_CONTINUE_TO_REVIEW",
+        key:
+          "continue-review",
         mode: "CHATGPT",
-        owner: "NEXT · CHATGPT",
+        owner:
+          "NEXT · CHATGPT",
         action:
           "Continue the review",
         detail:
           "Human judgment is recorded. Let ChatGPT re-read and review the current revision.",
-        where: "ChatGPT desktop app",
-        prompt: CONTINUE_CHATGPT_PROMPT,
+        where:
+          "ChatGPT Desktop → current conversation",
+        prompt:
+          CONTINUE_CHATGPT_PROMPT,
         returnWhen:
           "Return here when the workspace becomes Blocked, Ready for decision, or asks for another Human Decision.",
         targetId: "next-agent"
       });
     }
 
-    if (current.version === 1) {
+    if (
+      current.version === 1
+    ) {
       return state({
         id:
           "S05_INITIAL_AGENT_HANDOFF",
         key: "initial-agent",
         mode: "CHATGPT",
-        owner: "NEXT · CHATGPT",
+        owner:
+          "NEXT · CHATGPT",
         action:
           "Continue with the Agent",
         detail:
           "The work is scoped. ChatGPT can now inspect the boundary, propose a revision, and challenge it.",
-        where: "ChatGPT desktop app",
-        prompt: INITIAL_CHATGPT_PROMPT,
+        where:
+          "ChatGPT Desktop → current conversation",
+        prompt:
+          INITIAL_CHATGPT_PROMPT,
         returnWhen:
           "Return here when a Human Decision appears.",
         targetId: "next-agent"
@@ -526,13 +789,16 @@ export function deriveGuidanceState(
         "S06_FRESH_CHALLENGE_HANDOFF",
       key: "fresh-challenge",
       mode: "CHATGPT",
-      owner: "NEXT · CHATGPT",
+      owner:
+        "NEXT · CHATGPT",
       action:
         "Re-test the revised boundary",
       detail:
         "The boundary changed, so earlier Agent Challenges are stale. ChatGPT must challenge this exact revision again.",
-      where: "ChatGPT desktop app",
-      prompt: CONTINUE_CHATGPT_PROMPT,
+      where:
+        "ChatGPT Desktop → current conversation",
+      prompt:
+        CONTINUE_CHATGPT_PROMPT,
       returnWhen:
         "Return here when a new Human Decision appears.",
       targetId: "next-agent"
@@ -540,14 +806,19 @@ export function deriveGuidanceState(
   }
 
   return state({
-    id: "S21_INVALID_CURRENT_STATE",
+    id:
+      "S21_INVALID_CURRENT_STATE",
     key: "invalid-current",
     mode: "RECOVERY",
     owner: "RECOVERY",
     action: "Start new work",
     detail:
       `No safe next action is defined for revision status ${current.status}.`,
-    where: "This page",
-    targetId: "next-start-new"
+    where:
+      "Header → Start new work",
+    goLabel:
+      "Go to Start new work",
+    targetId:
+      "next-start-new"
   });
 }

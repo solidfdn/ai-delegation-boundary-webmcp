@@ -1340,14 +1340,14 @@ export default function DelegationApp() {
           </div>
         )}
 
-        {nextCue.mode === "HUMAN" &&
+        {nextCue.goLabel &&
           nextTargetOffscreen && (
           <button
             className="adb-next-cue-action"
             type="button"
             onClick={showNextStep}
           >
-            Show next step
+            {nextCue.goLabel}
             <span aria-hidden="true">
               →
             </span>
@@ -1522,6 +1522,7 @@ export default function DelegationApp() {
               )
               .map((rule) => (
                 <article
+                  id={`boundary-rule-${rule.id}`}
                   className="adb-rule-card"
                   key={rule.id}
                 >
@@ -1747,7 +1748,10 @@ export default function DelegationApp() {
             </div>
           </div>
 
-          <div className="adb-review-block">
+          <div
+            id="next-guardrails"
+            className="adb-review-block"
+          >
             <div className="adb-block-head">
               <div>
                 <span className="adb-card-label">
@@ -2231,6 +2235,12 @@ export default function DelegationApp() {
                   index
                 ) => (
                   <div
+                    id={
+                      revision.id ===
+                      workspace.currentRevisionId
+                        ? "next-current-revision"
+                        : undefined
+                    }
                     className={`adb-timeline-row ${
                       revision.id ===
                       workspace.currentRevisionId

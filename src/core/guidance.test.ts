@@ -26,7 +26,8 @@ function workspace() {
     createInteractiveDelegationWorkspace();
 
   value.task = {
-    title: "Customer refund decisions"
+    title:
+      "Customer refund decisions"
   };
 
   return value;
@@ -72,11 +73,39 @@ function challenge(
     humanResolution:
       status === "RESOLVED"
         ? {
-            decision: "KEEP_HUMAN",
-            note: "Human decided."
+            decision:
+              "KEEP_HUMAN",
+            note:
+              "Human decided."
           }
         : undefined
   };
+}
+
+function addKnownRegressionCase(
+  value: DelegationWorkspace
+) {
+  current(value)
+    .knownDecisions.push({
+      id: "known-test",
+      label:
+        "Human decision test",
+      facts: {
+        evidence_quality: "HIGH",
+        impact: "LOW",
+        reversibility:
+          "REVERSIBLE",
+        policy_clarity: "CLEAR",
+        exceptionality:
+          "STANDARD"
+      },
+      expectedOutcome:
+        "HUMAN_REVIEW",
+      rationale:
+        "Human kept review.",
+      createdInRevisionId:
+        value.currentRevisionId
+    });
 }
 
 function review(
@@ -92,14 +121,17 @@ function review(
     options.complete ?? true;
 
   const guardrailViolation =
-    options.guardrailViolation ??
+    options
+      .guardrailViolation ??
     false;
 
   const regression =
-    options.regression ?? false;
+    options.regression ??
+    false;
 
   const challengeCount =
-    options.challengeCount ?? 1;
+    options.challengeCount ??
+    1;
 
   const unresolved =
     options.unresolved ?? [];
@@ -115,7 +147,18 @@ function review(
                 "AGENT_ONLY",
               requiredOutcome:
                 "HUMAN_REVIEW",
-              violated: true
+              violated: true,
+              witnessFacts: {
+                evidence_quality:
+                  "HIGH",
+                impact: "LOW",
+                reversibility:
+                  "REVERSIBLE",
+                policy_clarity:
+                  "CLEAR",
+                exceptionality:
+                  "STANDARD"
+              }
             }
           ]
         : [],
@@ -127,7 +170,9 @@ function review(
       complete ? 1 : 0,
 
     guardrailsChecked:
-      guardrailViolation ? 1 : 0,
+      guardrailViolation
+        ? 1
+        : 0,
 
     regressions:
       regression
@@ -145,6 +190,7 @@ function review(
         : [],
 
     challengeCount,
+
     challengeSatisfied:
       challengeCount > 0 &&
       unresolved.length === 0,
@@ -161,7 +207,9 @@ interface InputOverrides {
   baseToolCount?: number;
   baseToolsResolved?: boolean;
   applyToolState?: ApplyToolState;
-  lastAgentError?: string | null;
+  lastAgentError?:
+    | string
+    | null;
 }
 
 function derive(
@@ -172,13 +220,18 @@ function derive(
   return deriveGuidanceState({
     workspace: value,
     baseToolCount:
-      overrides.baseToolCount ?? 5,
+      overrides.baseToolCount ??
+      5,
+
     baseToolsResolved:
-      overrides.baseToolsResolved ??
+      overrides
+        .baseToolsResolved ??
       true,
+
     applyToolState:
       overrides.applyToolState ??
       "idle",
+
     lastAgentError:
       overrides.lastAgentError
   });
@@ -186,31 +239,55 @@ function derive(
 
 type Case = {
   id: GuidanceStateId;
+  expectedWhere: string;
+  expectedGoLabel?:
+    string;
+
   build: () => {
-    workspace: DelegationWorkspace;
-    overrides?: InputOverrides;
+    workspace:
+      DelegationWorkspace;
+    overrides?:
+      InputOverrides;
   };
 };
+
+const conflictWhere =
+  "01 · Current boundary → Delegate low-risk standard decisions";
 
 const cases: Case[] = [
   {
     id: "S01_SCOPE_WORK",
+    expectedWhere:
+      "01 · Current boundary → Work to delegate",
+    expectedGoLabel:
+      "Go to Work to delegate",
     build: () => ({
       workspace:
         createInteractiveDelegationWorkspace()
     })
   },
   {
-    id: "S02_CHECKING_WEBMCP",
+    id:
+      "S02_CHECKING_WEBMCP",
+    expectedWhere:
+      "03 · Revision history → WebMCP",
+    expectedGoLabel:
+      "Go to WebMCP status",
     build: () => ({
       workspace: workspace(),
       overrides: {
-        baseToolsResolved: false
+        baseToolsResolved:
+          false
       }
     })
   },
   {
-    id: "S03_WEBMCP_NOT_DETECTED",
+    id:
+      "S03_WEBMCP_NOT_DETECTED",
+    expectedWhere:
+      "03 · Revision history → WebMCP",
+    expectedGoLabel:
+      "Go to WebMCP status",
     build: () => ({
       workspace: workspace(),
       overrides: {
@@ -219,7 +296,12 @@ const cases: Case[] = [
     })
   },
   {
-    id: "S04_WEBMCP_DEGRADED",
+    id:
+      "S04_WEBMCP_DEGRADED",
+    expectedWhere:
+      "03 · Revision history → WebMCP",
+    expectedGoLabel:
+      "Go to WebMCP status",
     build: () => ({
       workspace: workspace(),
       overrides: {
@@ -228,18 +310,31 @@ const cases: Case[] = [
     })
   },
   {
-    id: "S05_INITIAL_AGENT_HANDOFF",
+    id:
+      "S05_INITIAL_AGENT_HANDOFF",
+    expectedWhere:
+      "ChatGPT Desktop → current conversation",
     build: () => ({
       workspace: workspace()
     })
   },
   {
-    id: "S06_FRESH_CHALLENGE_HANDOFF",
+    id:
+      "S06_FRESH_CHALLENGE_HANDOFF",
+    expectedWhere:
+      "ChatGPT Desktop → current conversation",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
-      revision.id = "delegation-demo-r2";
+      const value =
+        workspace();
+
+      const revision =
+        current(value);
+
+      revision.id =
+        "delegation-demo-r2";
+
       revision.version = 2;
+
       value.currentRevisionId =
         revision.id;
 
@@ -249,12 +344,20 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S07_HUMAN_CHALLENGE",
+    id:
+      "S07_HUMAN_CHALLENGE",
+    expectedWhere:
+      "02 · Review the change → Agent Challenges",
+    expectedGoLabel:
+      "Go to Agent Challenge",
     build: () => {
-      const value = workspace();
-      current(value).challenges = [
-        challenge("OPEN")
-      ];
+      const value =
+        workspace();
+
+      current(value)
+        .challenges = [
+          challenge("OPEN")
+        ];
 
       return {
         workspace: value
@@ -262,12 +365,20 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S08_CONTINUE_TO_REVIEW",
+    id:
+      "S08_CONTINUE_TO_REVIEW",
+    expectedWhere:
+      "ChatGPT Desktop → current conversation",
     build: () => {
-      const value = workspace();
-      current(value).challenges = [
-        challenge("RESOLVED")
-      ];
+      const value =
+        workspace();
+
+      current(value)
+        .challenges = [
+          challenge(
+            "RESOLVED"
+          )
+        ];
 
       return {
         workspace: value
@@ -275,17 +386,24 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S09_REVIEW_NEEDS_CHALLENGE",
+    id:
+      "S09_REVIEW_NEEDS_CHALLENGE",
+    expectedWhere:
+      "ChatGPT Desktop → current conversation",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
+      const value =
+        workspace();
+
+      const revision =
+        current(value);
 
       revision.status =
         "NEEDS_REVIEW";
 
-      revision.review = review({
-        challengeCount: 0
-      });
+      revision.review =
+        review({
+          challengeCount: 0
+        });
 
       return {
         workspace: value
@@ -293,10 +411,18 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S10_REVIEW_HAS_OPEN_CHALLENGE",
+    id:
+      "S10_REVIEW_HAS_OPEN_CHALLENGE",
+    expectedWhere:
+      "02 · Review the change → Agent Challenges",
+    expectedGoLabel:
+      "Go to Agent Challenge",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
+      const value =
+        workspace();
+
+      const revision =
+        current(value);
 
       revision.status =
         "NEEDS_REVIEW";
@@ -305,11 +431,12 @@ const cases: Case[] = [
         challenge("OPEN")
       ];
 
-      revision.review = review({
-        unresolved: [
-          "challenge-test"
-        ]
-      });
+      revision.review =
+        review({
+          unresolved: [
+            "challenge-test"
+          ]
+        });
 
       return {
         workspace: value
@@ -319,16 +446,24 @@ const cases: Case[] = [
   {
     id:
       "S11_INVARIANT_VERIFICATION_INCOMPLETE",
+    expectedWhere:
+      "02 · Review the change → Guardrails",
+    expectedGoLabel:
+      "Go to Guardrails",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
+      const value =
+        workspace();
+
+      const revision =
+        current(value);
 
       revision.status =
         "NEEDS_REVIEW";
 
-      revision.review = review({
-        complete: false
-      });
+      revision.review =
+        review({
+          complete: false
+        });
 
       return {
         workspace: value
@@ -338,21 +473,32 @@ const cases: Case[] = [
   {
     id:
       "S12_BLOCKED_WITH_OPEN_CHALLENGE",
+    expectedWhere:
+      "02 · Review the change → Agent Challenges",
+    expectedGoLabel:
+      "Go to Agent Challenge",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
+      const value =
+        workspace();
 
-      revision.status = "BLOCKED";
+      const revision =
+        current(value);
+
+      revision.status =
+        "BLOCKED";
+
       revision.challenges = [
         challenge("OPEN")
       ];
 
-      revision.review = review({
-        guardrailViolation: true,
-        unresolved: [
-          "challenge-test"
-        ]
-      });
+      revision.review =
+        review({
+          guardrailViolation:
+            true,
+          unresolved: [
+            "challenge-test"
+          ]
+        });
 
       return {
         workspace: value
@@ -360,19 +506,33 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S13_BLOCKED_GUARDRAIL",
+    id:
+      "S13_BLOCKED_GUARDRAIL",
+    expectedWhere:
+      conflictWhere,
+    expectedGoLabel:
+      "Go to conflicting rule",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
+      const value =
+        workspace();
 
-      revision.status = "BLOCKED";
+      const revision =
+        current(value);
+
+      revision.status =
+        "BLOCKED";
+
       revision.challenges = [
-        challenge("RESOLVED")
+        challenge(
+          "RESOLVED"
+        )
       ];
 
-      revision.review = review({
-        guardrailViolation: true
-      });
+      revision.review =
+        review({
+          guardrailViolation:
+            true
+        });
 
       return {
         workspace: value
@@ -380,19 +540,36 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S14_BLOCKED_REGRESSION",
+    id:
+      "S14_BLOCKED_REGRESSION",
+    expectedWhere:
+      conflictWhere,
+    expectedGoLabel:
+      "Go to conflicting rule",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
+      const value =
+        workspace();
 
-      revision.status = "BLOCKED";
+      const revision =
+        current(value);
+
+      addKnownRegressionCase(
+        value
+      );
+
+      revision.status =
+        "BLOCKED";
+
       revision.challenges = [
-        challenge("RESOLVED")
+        challenge(
+          "RESOLVED"
+        )
       ];
 
-      revision.review = review({
-        regression: true
-      });
+      revision.review =
+        review({
+          regression: true
+        });
 
       return {
         workspace: value
@@ -400,20 +577,38 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S15_BLOCKED_BOTH",
+    id:
+      "S15_BLOCKED_BOTH",
+    expectedWhere:
+      conflictWhere,
+    expectedGoLabel:
+      "Go to conflicting rule",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
+      const value =
+        workspace();
 
-      revision.status = "BLOCKED";
+      const revision =
+        current(value);
+
+      addKnownRegressionCase(
+        value
+      );
+
+      revision.status =
+        "BLOCKED";
+
       revision.challenges = [
-        challenge("RESOLVED")
+        challenge(
+          "RESOLVED"
+        )
       ];
 
-      revision.review = review({
-        guardrailViolation: true,
-        regression: true
-      });
+      revision.review =
+        review({
+          guardrailViolation:
+            true,
+          regression: true
+        });
 
       return {
         workspace: value
@@ -423,18 +618,28 @@ const cases: Case[] = [
   {
     id:
       "S16_READY_FOR_HUMAN_APPROVAL",
+    expectedWhere:
+      "02 · Review the change → Approve revision 1",
+    expectedGoLabel:
+      "Go to approval",
     build: () => {
-      const value = workspace();
-      const revision = current(value);
+      const value =
+        workspace();
+
+      const revision =
+        current(value);
 
       revision.status =
         "READY_FOR_DECISION";
 
       revision.challenges = [
-        challenge("RESOLVED")
+        challenge(
+          "RESOLVED"
+        )
       ];
 
-      revision.review = review();
+      revision.review =
+        review();
 
       return {
         workspace: value
@@ -444,18 +649,27 @@ const cases: Case[] = [
   {
     id:
       "S17_APPLY_TOOL_REGISTERING",
+    expectedWhere:
+      "03 · Revision history → WebMCP",
+    expectedGoLabel:
+      "Go to WebMCP status",
     build: () => {
-      const value = workspace();
+      const value =
+        workspace();
+
       current(value).status =
         "APPROVED";
 
       value.approval = {
         revisionId:
-          value.currentRevisionId,
-        fingerprint: "test",
+          value
+            .currentRevisionId,
+        fingerprint:
+          "test",
         approvedAt:
           "2026-08-30T00:00:00.000Z",
-        approvedBy: "HUMAN"
+        approvedBy:
+          "HUMAN"
       };
 
       return {
@@ -470,18 +684,25 @@ const cases: Case[] = [
   {
     id:
       "S18_APPROVED_AGENT_HANDOFF",
+    expectedWhere:
+      "ChatGPT Desktop → current conversation",
     build: () => {
-      const value = workspace();
+      const value =
+        workspace();
+
       current(value).status =
         "APPROVED";
 
       value.approval = {
         revisionId:
-          value.currentRevisionId,
-        fingerprint: "test",
+          value
+            .currentRevisionId,
+        fingerprint:
+          "test",
         approvedAt:
           "2026-08-30T00:00:00.000Z",
-        approvedBy: "HUMAN"
+        approvedBy:
+          "HUMAN"
       };
 
       return {
@@ -494,33 +715,49 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S19_APPLY_TOOL_FAILED",
+    id:
+      "S19_APPLY_TOOL_FAILED",
+    expectedWhere:
+      "03 · Revision history → WebMCP",
+    expectedGoLabel:
+      "Go to WebMCP status",
     build: () => {
-      const value = workspace();
+      const value =
+        workspace();
+
       current(value).status =
         "APPROVED";
 
       value.approval = {
         revisionId:
-          value.currentRevisionId,
-        fingerprint: "test",
+          value
+            .currentRevisionId,
+        fingerprint:
+          "test",
         approvedAt:
           "2026-08-30T00:00:00.000Z",
-        approvedBy: "HUMAN"
+        approvedBy:
+          "HUMAN"
       };
 
       return {
         workspace: value,
         overrides: {
-          applyToolState: "failed"
+          applyToolState:
+            "failed"
         }
       };
     }
   },
   {
-    id: "S20_APPLIED_COMPLETE",
+    id:
+      "S20_APPLIED_COMPLETE",
+    expectedWhere:
+      "03 · Revision history → current revision",
     build: () => {
-      const value = workspace();
+      const value =
+        workspace();
+
       current(value).status =
         "APPLIED";
 
@@ -530,9 +767,16 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S21_INVALID_CURRENT_STATE",
+    id:
+      "S21_INVALID_CURRENT_STATE",
+    expectedWhere:
+      "Header → Start new work",
+    expectedGoLabel:
+      "Go to Start new work",
     build: () => {
-      const value = workspace();
+      const value =
+        workspace();
+
       current(value).status =
         "SUPERSEDED";
 
@@ -542,7 +786,10 @@ const cases: Case[] = [
     }
   },
   {
-    id: "S22_AGENT_TOOL_ERROR",
+    id:
+      "S22_AGENT_TOOL_ERROR",
+    expectedWhere:
+      "ChatGPT Desktop → current conversation",
     build: () => ({
       workspace: workspace(),
       overrides: {
@@ -563,14 +810,16 @@ describe(
           GUIDANCE_STATE_COUNT
         ).toBe(22);
 
-        expect(cases).toHaveLength(
-          GUIDANCE_STATE_COUNT
-        );
+        expect(cases)
+          .toHaveLength(
+            GUIDANCE_STATE_COUNT
+          );
 
         expect(
           new Set(
             cases.map(
-              (item) => item.id
+              (item) =>
+                item.id
             )
           ).size
         ).toBe(
@@ -580,16 +829,73 @@ describe(
     );
 
     it.each(cases)(
-      "maps $id to one explicit next action",
-      ({ id, build }) => {
-        const built = build();
+      "maps $id to one exact next-action destination",
+      ({
+        id,
+        expectedWhere,
+        expectedGoLabel,
+        build
+      }) => {
+        const built =
+          build();
 
-        expect(
+        const result =
           derive(
             built.workspace,
             built.overrides
-          ).id
+          );
+
+        expect(
+          result.id
         ).toBe(id);
+
+        expect(
+          result.where
+        ).toBe(
+          expectedWhere
+        );
+
+        expect(
+          result.where
+            .toLowerCase()
+        ).not.toBe(
+          "this page"
+        );
+
+        expect(
+          result.goLabel
+        ).toBe(
+          expectedGoLabel
+        );
+      }
+    );
+
+    it(
+      "uses only concrete browser destinations or the current ChatGPT conversation",
+      () => {
+        for (
+          const item of cases
+        ) {
+          const built =
+            item.build();
+
+          const result =
+            derive(
+              built.workspace,
+              built.overrides
+            );
+
+          const concrete =
+            result.where.includes(
+              "→"
+            ) ||
+            result.where ===
+              "Header → Start new work";
+
+          expect(
+            concrete
+          ).toBe(true);
+        }
       }
     );
   }
