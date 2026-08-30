@@ -107,7 +107,11 @@ When a human resolves an Agent Challenge, that judgment becomes a Known Decision
 > **Every human override becomes a test before it becomes a rule.**
 
 ### Approval is exact
-Human approval is bound to a SHA-256 fingerprint of the exact reviewable state. Only that exact approved revision can be applied.
+Human approval is bound to a SHA-256 fingerprint of the exact reviewable state. The fingerprint covers the task, decision factors, revision identity, boundary, Guardrails, Known Decisions, Agent Challenges, and deterministic review result.
+
+Before either direct or WebMCP application, the application recalculates the fingerprint and compares it with the value recorded at approval. Any post-approval change is rejected, and creating a new revision invalidates the prior approval.
+
+The fingerprint remains an internal verification artifact and is not exposed through Agent-facing WebMCP output. Both application paths use the same serialized coordinator and exact-state commit check.
 
 `READY_FOR_DECISION` is not approval.
 
