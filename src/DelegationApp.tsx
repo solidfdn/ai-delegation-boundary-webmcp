@@ -1489,8 +1489,8 @@ export default function DelegationApp() {
 
                 <div className="adb-task-locked-note">
                   {lang === "ja"
-                    ? "このWorkspaceでは検討対象を固定しています。別の業務を検討する場合はResetします。"
-                    : "Task scope is fixed for this workspace. Reset to evaluate a different task."}
+                    ? "このWorkspaceでは検討対象を固定しています。別の業務を検討する場合は、上部の「新しい業務」から開始します。"
+                    : "Task scope is fixed for this workspace. Use Start new work in the header to evaluate a different task."}
                 </div>
               </>
             )}
@@ -1974,15 +1974,15 @@ export default function DelegationApp() {
                       ? "業務が決まるまで、Agentによる委任条件の変更・Challenge・Reviewはロックされています。"
                       : "Until the work is scoped, Agent tools that change, challenge, or review authority are locked."
                     : lang === "ja"
-                      ? "Challengeが0件のRevisionは承認できません。Agentに、変更案を出したうえで、その正確なBoundaryが危険になる具体例を探させます。"
-                      : "A revision with zero challenges cannot be approved. Ask the Agent to propose a change, then try to break that exact boundary with a concrete scenario."}
+                      ? "このRevisionにはまだAgent Challengeがありません。Challengeが0件のRevisionは承認可能な状態にはなりません。"
+                      : "This revision has no Agent Challenge yet. A revision with zero challenges cannot become approval-ready."}
                 </p>
 
                 {taskConfigured && (
                   <p className="adb-agent-guidance-note">
                     {lang === "ja"
-                      ? "次にChatGPTが必要な場合は、上部のNext Actionにコピー可能な文面が表示されます。"
-                      : "When ChatGPT is needed, the Next Action above provides one copy-ready handoff prompt."}
+                      ? "必要な次の操作は、上部のNext Actionだけに表示されます。"
+                      : "The Next Action above is the single source of workflow guidance."}
                   </p>
                 )}
               </div>
@@ -2342,17 +2342,17 @@ export default function DelegationApp() {
               baseToolCount >= 5 ? (
                 <>
                   <strong className="adb-runtime-primary">
-                    Use with ChatGPT
+                    Site tools ready
                   </strong>
 
                   <div className="adb-runtime-map">
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        NEXT
+                        SITE TOOLS
                       </span>
 
                       <p>
-                        Follow the Next Action above. It shows one copy-ready ChatGPT handoff only when the Agent is needed.
+                        Five normal WebMCP tools are registered by this page. Human Approval can expose one additional apply capability.
                       </p>
                     </div>
 
@@ -2390,11 +2390,15 @@ export default function DelegationApp() {
                   <div className="adb-runtime-map adb-runtime-setup">
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        SETUP
+                        SITE TOOLS
                       </span>
 
                       <p>
-                        Open this page in the ChatGPT desktop app’s built-in browser. Start Agent work only after all 5 normal tools are available.
+                        {!baseToolsResolved
+                          ? "Registration is still in progress."
+                          : baseToolCount > 0
+                            ? `${baseToolCount} of 5 normal WebMCP tools are registered. Agent work remains unavailable until all 5 are ready.`
+                            : "No WebMCP site tools are available in this browser."}
                       </p>
                     </div>
 
