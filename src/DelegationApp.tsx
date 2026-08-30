@@ -711,6 +711,18 @@ export default function DelegationApp() {
       ? nextCue.targetId
       : null;
 
+  const inlineApprovalPromptTargetId =
+    nextCue.id ===
+      "S18_APPROVED_AGENT_HANDOFF" &&
+    nextCue.prompt &&
+    current.status === "APPROVED"
+      ? "next-approved"
+      : null;
+
+  const inlinePromptTargetId =
+    inlineBoundaryPromptTargetId ??
+    inlineApprovalPromptTargetId;
+
   /*
    * The WHERE target and the in-page attention pointer share
    * one source of truth. Most copy-ready ChatGPT handoffs have no
@@ -719,10 +731,14 @@ export default function DelegationApp() {
    * embedded inside the exact conflicting rule.
    */
   const pageGuidanceTargetId =
-    inlineBoundaryPromptTargetId ??
+    inlinePromptTargetId ??
     (nextCue.prompt
       ? null
       : nextCue.targetId);
+
+  useEffect(() => {
+    setCopyFeedback("");
+  }, [nextCue.prompt]);
 
   const isGuidanceTarget = (
     targetId: string
@@ -1413,7 +1429,7 @@ export default function DelegationApp() {
         )}
 
         {nextCue.prompt &&
-          !inlineBoundaryPromptTargetId && (
+          !inlinePromptTargetId && (
           <div className="adb-guidance-prompt">
             <label htmlFor="adb-guidance-prompt">
               SEND TO CHATGPT
@@ -2371,7 +2387,16 @@ export default function DelegationApp() {
 
             {current.status ===
               "APPROVED" && (
-              <div className="adb-approved-card">
+              <div
+                id="next-approved"
+                className={`adb-approved-card${
+                  isGuidanceTarget(
+                    "next-approved"
+                  )
+                    ? " is-guidance-target"
+                    : ""
+                }`}
+              >
                 <span>
                   {lang === "ja"
                     ? "人が承認した正確な版"
@@ -2387,6 +2412,119 @@ export default function DelegationApp() {
                     ? "この正確なRevisionだけが人によって承認されています。"
                     : "This exact revision is human-approved. Only the current approved state can be applied."}
                 </p>
+
+                <div className="adb-approved-handoff">
+                  <div className="adb-handoff-step is-complete">
+                    <span>1</span>
+
+                    <div>
+                      <strong>
+                        {lang === "ja"
+                          ? "人の承認を記録"
+                          : "Human approval recorded"}
+                      </strong>
+
+                      <small>
+                        {lang === "ja"
+                          ? `Revision ${current.version} の正確な状態を固定しました。`
+                          : `The exact state of revision ${current.version} is locked.`}
+                      </small>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`adb-handoff-step${
+                      applyToolState ===
+                        "available"
+                        ? " is-complete"
+                        : applyToolState ===
+                            "failed"
+                          ? " is-failed"
+                          : " is-pending"
+                    }`}
+                  >
+                    <span>2</span>
+
+                    <div>
+                      <strong>
+                        {applyToolState ===
+                        "available"
+                          ? lang === "ja"
+                            ? "適用機能の準備完了"
+                            : "Approved apply capability ready"
+                          : applyToolState ===
+                              "failed"
+                            ? lang === "ja"
+                              ? "適用機能を準備できませんでした"
+                              : "Apply capability needs a retry"
+                            : lang === "ja"
+                              ? "安全な適用機能を準備中"
+                              : "Preparing the secure apply capability"}
+                      </strong>
+
+                      <small>
+                        {applyToolState ===
+                        "available"
+                          ? lang === "ja"
+                            ? "この承認済みRevisionだけに利用できます。"
+                            : "Available only for this exact approved revision."
+                          : applyToolState ===
+                              "failed"
+                            ? lang === "ja"
+                              ? "ページを再読み込みしてください。承認は保持されています。"
+                              : "Reload this page. The human approval is preserved."
+                            : lang === "ja"
+                              ? "このままお待ちください。次の操作が自動表示されます。"
+                              : "Stay here. The next action will appear automatically."}
+                      </small>
+                    </div>
+                  </div>
+
+                  {inlineApprovalPromptTargetId &&
+                    nextCue.prompt && (
+                    <div className="adb-guidance-prompt adb-approval-guidance-prompt">
+                      <label htmlFor="adb-approval-guidance-prompt">
+                        3 · SEND TO CURRENT CHATGPT CONVERSATION
+                      </label>
+
+                      <strong>
+                        {lang === "ja"
+                          ? "現在のChatGPT会話へ貼り付けて送信"
+                          : "Paste into the current ChatGPT conversation and send"}
+                      </strong>
+
+                      <textarea
+                        id="adb-approval-guidance-prompt"
+                        ref={guidancePromptRef}
+                        readOnly
+                        rows={3}
+                        value={nextCue.prompt}
+                        onFocus={(event) =>
+                          event.currentTarget
+                            .select()
+                        }
+                      />
+
+                      <div className="adb-guidance-copy-row">
+                        <button
+                          type="button"
+                          onClick={
+                            copyGuidancePrompt
+                          }
+                        >
+                          Copy instruction for ChatGPT
+                        </button>
+
+                        <span
+                          role="status"
+                          aria-live="polite"
+                        >
+                          {copyFeedback}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

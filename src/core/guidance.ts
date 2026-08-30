@@ -443,14 +443,14 @@ export function deriveGuidanceState(
         mode: "RECOVERY",
         owner: "CHECKING",
         action:
-          "Preparing the approved apply capability",
+          "Preparing the approved handoff",
         detail:
-          "Human approval is complete. The page is registering the additional WebMCP capability.",
+          "Stay here. The copy action will appear automatically when the approved apply capability is ready.",
         where:
-          "03 · Revision history → WebMCP",
+          "02 · Review the change → approved revision handoff",
         goLabel:
-          "Go to WebMCP status",
-        targetId: "next-agent"
+          "Go to approved handoff",
+        targetId: "next-approved"
       });
     }
 
@@ -465,16 +465,16 @@ export function deriveGuidanceState(
         mode: "RECOVERY",
         owner: "RECOVERY",
         action:
-          "Reload before applying the approved revision",
+          "Reload to retry the approved handoff",
         detail:
           "Human approval is preserved, but the additional apply capability did not register.",
         where:
-          "03 · Revision history → WebMCP",
+          "02 · Review the change → approved revision handoff",
         goLabel:
-          "Go to WebMCP status",
+          "Go to approved handoff",
         returnWhen:
-          "Continue only when the WebMCP card shows 6 tools.",
-        targetId: "next-agent"
+          "Reload this page. The approval is preserved and the handoff retries automatically.",
+        targetId: "next-approved"
       });
     }
 
@@ -486,16 +486,16 @@ export function deriveGuidanceState(
       owner:
         "NEXT · CHATGPT",
       action:
-        "Apply the human-approved revision",
+        "Continue in the current ChatGPT conversation",
       detail:
-        "Human approval unlocked one additional WebMCP capability. No tool name needs to be typed.",
+        "The approved apply capability is ready. Copy the instruction below, paste it into the current ChatGPT conversation, and send.",
       where:
-        "ChatGPT Desktop → current conversation",
+        "02 · Review the change → approved revision handoff",
       prompt:
         CONTINUE_CHATGPT_PROMPT,
       returnWhen:
         "Return here when the workspace shows Applied.",
-      targetId: "next-agent"
+      targetId: "next-approved"
     });
   }
 

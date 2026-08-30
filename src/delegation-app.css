@@ -830,6 +830,84 @@ button {
   line-height: 1.5;
 }
 
+.adb-approved-handoff {
+  display: grid;
+  gap: 10px;
+
+  margin-top: 16px;
+  padding-top: 14px;
+
+  border-top:
+    1px solid var(--line);
+}
+
+.adb-handoff-step {
+  display: grid;
+  grid-template-columns:
+    24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.adb-handoff-step > span {
+  display: grid;
+  place-items: center;
+
+  width: 24px;
+  height: 24px;
+
+  border:
+    1px solid var(--line-strong);
+
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.adb-handoff-step.is-complete > span {
+  border-color:
+    var(--action-blue);
+
+  background:
+    var(--action-blue);
+
+  color: #ffffff;
+}
+
+.adb-handoff-step.is-pending > span {
+  border-color: var(--lime);
+  background: var(--lime-whisper);
+  color: var(--ink);
+}
+
+.adb-handoff-step.is-failed > span {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.adb-handoff-step > div {
+  display: grid;
+  gap: 3px;
+}
+
+.adb-handoff-step strong {
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.adb-handoff-step small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.adb-approval-guidance-prompt {
+  margin-top: 2px;
+  border-left:
+    3px solid var(--action-blue);
+}
+
 .adb-applied-card {
   border-color: var(--lime);
   background: #fbfff1;

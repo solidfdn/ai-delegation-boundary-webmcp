@@ -650,9 +650,9 @@ const cases: Case[] = [
     id:
       "S17_APPLY_TOOL_REGISTERING",
     expectedWhere:
-      "03 · Revision history → WebMCP",
+      "02 · Review the change → approved revision handoff",
     expectedGoLabel:
-      "Go to WebMCP status",
+      "Go to approved handoff",
     build: () => {
       const value =
         workspace();
@@ -685,7 +685,7 @@ const cases: Case[] = [
     id:
       "S18_APPROVED_AGENT_HANDOFF",
     expectedWhere:
-      "ChatGPT Desktop → current conversation",
+      "02 · Review the change → approved revision handoff",
     build: () => {
       const value =
         workspace();
@@ -718,9 +718,9 @@ const cases: Case[] = [
     id:
       "S19_APPLY_TOOL_FAILED",
     expectedWhere:
-      "03 · Revision history → WebMCP",
+      "02 · Review the change → approved revision handoff",
     expectedGoLabel:
-      "Go to WebMCP status",
+      "Go to approved handoff",
     build: () => {
       const value =
         workspace();
@@ -961,6 +961,50 @@ describe(
 
         expect(result.prompt).toContain(
           "Preserve every non-negotiable Guardrail."
+        );
+      }
+    );
+
+    it(
+      "makes the approved handoff self-contained without asking the user to inspect tool counts",
+      () => {
+        const approvedCase =
+          cases.find(
+            (item) =>
+              item.id ===
+              "S18_APPROVED_AGENT_HANDOFF"
+          );
+
+        if (!approvedCase) {
+          throw new Error(
+            "Approved handoff guidance case is missing."
+          );
+        }
+
+        const built =
+          approvedCase.build();
+
+        const result = derive(
+          built.workspace,
+          built.overrides
+        );
+
+        expect(result.action).toBe(
+          "Continue in the current ChatGPT conversation"
+        );
+
+        expect(result.detail).toContain(
+          "Copy the instruction below"
+        );
+
+        expect(result.detail).toContain(
+          "paste it into the current ChatGPT conversation"
+        );
+
+        expect(
+          `${result.action} ${result.detail} ${result.returnWhen}`
+        ).not.toContain(
+          "6 tools"
         );
       }
     );
