@@ -4,7 +4,7 @@
 
 AI Delegation Boundary helps people decide where agent autonomy should end and human authority should begin.
 
-**Live app:** https://solidfdn.github.io/decision-patch-webmcp/
+**Live app:** https://solidfdn.github.io/ai-delegation-boundary-webmcp/
 
 ## Product view
 

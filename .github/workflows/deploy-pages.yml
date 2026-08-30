@@ -1,4 +1,4 @@
-﻿name: Deploy Decision Patch to GitHub Pages
+name: Deploy AI Delegation Boundary to GitHub Pages
 
 on:
   push:

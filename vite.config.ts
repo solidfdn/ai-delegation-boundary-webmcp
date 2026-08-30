@@ -3,5 +3,5 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/decision-patch-webmcp/",
+  base: "/ai-delegation-boundary-webmcp/",
 });
