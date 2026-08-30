@@ -50,6 +50,7 @@ button {
   --soft: #f6f7f5;
   --lime: #c9ff35;
   --danger: #8f4c52;
+  --action-blue: #244E95;
 
   min-height: 100vh;
   color: var(--ink);
@@ -1493,7 +1494,17 @@ select:focus-visible {
 
 .adb-task-form button:disabled {
   cursor: not-allowed;
-  opacity: .38;
+
+  border-color:
+    var(--line-strong);
+
+  background:
+    var(--soft);
+
+  color:
+    var(--muted);
+
+  opacity: 1;
 }
 
 .adb-task-form small {
@@ -1519,7 +1530,17 @@ select:focus-visible {
 
 .adb-condition select:disabled {
   cursor: not-allowed;
-  opacity: .42;
+
+  border-bottom-color:
+    var(--line-strong);
+
+  background:
+    var(--soft);
+
+  color:
+    var(--muted);
+
+  opacity: 1;
 }
 
 .adb-known-empty {
@@ -1590,7 +1611,17 @@ select:focus-visible {
 
 .adb-check-button:disabled {
   cursor: not-allowed;
-  opacity: .38;
+
+  border-color:
+    var(--line-strong);
+
+  background:
+    var(--soft);
+
+  color:
+    var(--muted);
+
+  opacity: 1;
 }
 
 .adb-task-field input:focus-visible,
@@ -1699,8 +1730,11 @@ select:focus-visible {
 
 .adb-challenge-actions button:hover,
 .adb-challenge-actions button:focus-visible {
-  background: var(--ink);
-  color: #fff;
+  background:
+    var(--action-blue);
+
+  color:
+    #ffffff;
 }
 
 @media (max-width: 700px) {
@@ -1924,8 +1958,9 @@ select:focus-visible {
 
 .adb-challenge-actions button:hover,
 .adb-challenge-actions button:focus-visible {
-  border-color: var(--ink);
-  background: var(--guide-soft);
+  border-color: var(--action-blue);
+  background: var(--action-blue);
+  color: #ffffff;
 }
 
 .adb-app[data-next="complete"]
@@ -2048,6 +2083,9 @@ select:focus-visible {
 
   background:
     var(--guide-soft);
+
+  color:
+    var(--ink);
 
   box-shadow:
     0 0 0 3px
@@ -3829,4 +3867,46 @@ button:focus-visible {
     width: 100%;
     min-height: 46px;
   }
+}
+
+/* ==========================================================
+   INTERACTIVE CONTRAST CONTRACT V1
+   Light surfaces identify the next destination. Hover and
+   keyboard focus use one unambiguous action state.
+   ========================================================== */
+
+.adb-app
+.adb-challenge-actions
+button:hover,
+.adb-app
+.adb-challenge-actions
+button:focus-visible,
+.adb-app
+.adb-guidance-copy-row
+button:hover,
+.adb-app
+.adb-guidance-copy-row
+button:focus-visible,
+.adb-app
+#next-review:not(:disabled):hover,
+.adb-app
+#next-review:not(:disabled):focus-visible,
+.adb-app
+#next-approve:hover,
+.adb-app
+#next-approve:focus-visible,
+.adb-app
+.adb-dialog-actions
+button:hover,
+.adb-app
+.adb-dialog-actions
+button:focus-visible {
+  border-color:
+    var(--action-blue);
+
+  background:
+    var(--action-blue);
+
+  color:
+    #ffffff;
 }
