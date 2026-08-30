@@ -643,7 +643,14 @@ const cases: Case[] = [
         review();
 
       return {
-        workspace: value
+        workspace: value,
+        overrides: {
+          baseToolCount: 0,
+          baseToolsResolved:
+            false,
+          lastAgentError:
+            "A stale Agent error."
+        }
       };
     }
   },
@@ -684,7 +691,7 @@ const cases: Case[] = [
   },
   {
     id:
-      "S18_APPROVED_AGENT_HANDOFF",
+      "S18_APPROVED_DIRECT_APPLY",
     expectedWhere:
       "02 · Review the change → Apply approved revision 1",
     expectedGoLabel:
@@ -904,7 +911,18 @@ describe(
         current(value).status =
           "APPLIED";
 
-        const result = derive(value);
+        const result = derive(
+          value,
+          {
+            baseToolCount: 0,
+            baseToolsResolved:
+              false,
+            applyToolState:
+              "failed",
+            lastAgentError:
+              "A stale Agent error."
+          }
+        );
 
         expect(result.owner).toBe(
           "WORKFLOW COMPLETE"
@@ -1020,12 +1038,12 @@ describe(
           cases.find(
             (item) =>
               item.id ===
-              "S18_APPROVED_AGENT_HANDOFF"
+              "S18_APPROVED_DIRECT_APPLY"
           );
 
         if (!approvedCase) {
           throw new Error(
-            "Approved handoff guidance case is missing."
+            "Approved direct-apply guidance case is missing."
           );
         }
 
@@ -1068,12 +1086,30 @@ describe(
     );
 
     it.each([
-      "registering",
-      "available",
-      "failed"
+      {
+        applyToolState:
+          "registering",
+        expectedId:
+          "S17_APPLY_TOOL_REGISTERING"
+      },
+      {
+        applyToolState:
+          "available",
+        expectedId:
+          "S18_APPROVED_DIRECT_APPLY"
+      },
+      {
+        applyToolState:
+          "failed",
+        expectedId:
+          "S19_APPLY_TOOL_FAILED"
+      }
     ] as const)(
-      "keeps direct apply available while the optional WebMCP route is %s",
-      (applyToolState) => {
+      "keeps direct apply available while the optional WebMCP route is $applyToolState",
+      ({
+        applyToolState,
+        expectedId
+      }) => {
         const value = workspace();
 
         current(value).status =
@@ -1082,10 +1118,18 @@ describe(
         const result = derive(
           value,
           {
-            applyToolState
+            applyToolState,
+            baseToolCount: 0,
+            baseToolsResolved:
+              false,
+            lastAgentError:
+              "A stale Agent error."
           }
         );
 
+        expect(result.id).toBe(
+          expectedId
+        );
         expect(result.mode).toBe(
           "HUMAN"
         );
@@ -1097,6 +1141,122 @@ describe(
         );
         expect(result.goLabel).toBe(
           "Go to direct apply"
+        );
+      }
+    );
+
+    it.each([
+      {
+        condition:
+          "base tools are unresolved",
+        overrides: {
+          baseToolsResolved:
+            false
+        }
+      },
+      {
+        condition:
+          "no base tools are detected",
+        overrides: {
+          baseToolCount: 0
+        }
+      },
+      {
+        condition:
+          "base tools are partially registered",
+        overrides: {
+          baseToolCount: 3
+        }
+      },
+      {
+        condition:
+          "a stale Agent error remains",
+        overrides: {
+          lastAgentError:
+            "A stale Agent error."
+        }
+      }
+    ] as const)(
+      "keeps human direct apply primary when $condition",
+      ({ overrides }) => {
+        const value = workspace();
+
+        current(value).status =
+          "APPROVED";
+
+        const result = derive(
+          value,
+          {
+            ...overrides,
+            applyToolState:
+              "available"
+          }
+        );
+
+        expect(result.id).toBe(
+          "S18_APPROVED_DIRECT_APPLY"
+        );
+        expect(result.mode).toBe(
+          "HUMAN"
+        );
+        expect(result.targetId).toBe(
+          "next-apply-direct"
+        );
+      }
+    );
+
+    it.each([
+      {
+        condition:
+          "base tools are unresolved",
+        overrides: {
+          baseToolsResolved:
+            false
+        }
+      },
+      {
+        condition:
+          "no base tools are detected",
+        overrides: {
+          baseToolCount: 0
+        }
+      },
+      {
+        condition:
+          "base tools are partially registered",
+        overrides: {
+          baseToolCount: 3
+        }
+      },
+      {
+        condition:
+          "a stale Agent error remains",
+        overrides: {
+          lastAgentError:
+            "A stale Agent error."
+        }
+      }
+    ] as const)(
+      "keeps the completion report terminal when $condition",
+      ({ overrides }) => {
+        const value = workspace();
+
+        current(value).status =
+          "APPLIED";
+
+        const result = derive(
+          value,
+          overrides
+        );
+
+        expect(result.id).toBe(
+          "S20_APPLIED_COMPLETE"
+        );
+        expect(result.mode).toBe(
+          "COMPLETE"
+        );
+        expect(result.targetId).toBe(
+          "workflow-complete"
         );
       }
     );

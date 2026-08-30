@@ -31,15 +31,24 @@ WebMCP gives the agent structured access through five normal tools:
 4. `review_delegation_revision`
 5. `inspect_revision_history`
 
-A sixth tool, `apply_approved_revision`, does not exist until a human approves the exact revision. After application, that capability disappears again.
+A sixth tool, `apply_approved_revision`, does not exist until a human approves the exact revision. It provides an optional Agent application path and disappears again after application.
 
 > **Human approval changes the agent's capability surface.**
 
 ## Human + Agent workflow
 
-**Human scopes the work -> Agent proposes -> Agent challenges -> Human judges -> Agent re-tests -> Human approves -> Agent applies the exact approved revision**
+**Human scopes the work -> Agent proposes -> Agent challenges -> Human judges -> Agent re-tests -> Human approves -> Human applies the exact approved revision -> Completion report**
 
-The Agent can propose and test changes. The Agent cannot create human approval.
+The primary completion path stays in the web application: the human selects **Apply revision N and complete**. This path does not require ChatGPT or WebMCP. Immediately before application, the application re-verifies the current revision ID and the SHA-256 fingerprint recorded at approval.
+
+WebMCP remains available as an optional application path. After approval, a human may explicitly authorize ChatGPT to invoke `apply_approved_revision` for that same revision. The Agent cannot create approval, change the approved revision, or substitute another revision.
+
+Both paths end in the same terminal state: `APPLIED`. The page automatically scrolls to a Completion Report showing the applied revision, Guardrail violations, protected human decisions, resolved Challenges, and the complete final boundary. No further action is required for that workspace.
+
+### Demo paths
+
+- **Primary:** Approve -> Apply revision N and complete -> Completion Report
+- **Optional WebMCP:** Approve -> explicitly authorize ChatGPT -> Agent invokes `apply_approved_revision` -> Completion Report
 
 ## Trust model
 
@@ -68,7 +77,7 @@ Human approval is bound to a SHA-256 fingerprint of the exact reviewable state. 
 - WebMCP via `document.modelContext`
 - GitHub Pages
 
-The Challenge build passes **32 automated tests** covering delegation evaluation, human authority, task scope, mandatory fresh Agent Challenges, Guardrail invariants, regression checks, approval fingerprints, and WebMCP actions.
+The Challenge build passes the automated test suite covering delegation evaluation, human authority, task scope, mandatory fresh Agent Challenges, Guardrail invariants, regression checks, approval fingerprints, direct application guidance, and WebMCP actions.
 
 ## Run locally
 

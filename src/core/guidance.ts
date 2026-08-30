@@ -40,7 +40,7 @@ export type GuidanceStateId =
   | "S15_BLOCKED_BOTH"
   | "S16_READY_FOR_HUMAN_APPROVAL"
   | "S17_APPLY_TOOL_REGISTERING"
-  | "S18_APPROVED_AGENT_HANDOFF"
+  | "S18_APPROVED_DIRECT_APPLY"
   | "S19_APPLY_TOOL_FAILED"
   | "S20_APPLIED_COMPLETE"
   | "S21_INVALID_CURRENT_STATE"
@@ -299,95 +299,11 @@ export function deriveGuidanceState(
     });
   }
 
-  if (input.lastAgentError) {
-    return state({
-      id: "S22_AGENT_TOOL_ERROR",
-      key: "agent-error",
-      mode: "RECOVERY",
-      owner: "RECOVERY",
-      action:
-        "Retry from the current workspace",
-      detail:
-        input.lastAgentError,
-      where:
-        "ChatGPT Desktop → current conversation",
-      prompt:
-        CONTINUE_CHATGPT_PROMPT,
-      returnWhen:
-        "Return here after ChatGPT completes the retry or asks for human judgment.",
-      targetId: "next-agent"
-    });
-  }
-
   /*
-   * Registration is asynchronous. A transient zero must never
-   * be presented as "WebMCP not detected".
+   * Terminal and post-review human actions are owned by the page.
+   * WebMCP is optional at this point, so tool registration or a
+   * stale Agent error must never hide direct apply or completion.
    */
-  if (!input.baseToolsResolved) {
-    return state({
-      id:
-        "S02_CHECKING_WEBMCP",
-      key: "checking-webmcp",
-      mode: "RECOVERY",
-      owner: "CHECKING",
-      action:
-        "Checking WebMCP availability",
-      detail:
-        "No action is required while this page registers its site tools.",
-      where:
-        "03 · Revision history → WebMCP",
-      goLabel:
-        "Go to WebMCP status",
-      targetId: "next-agent"
-    });
-  }
-
-  if (
-    input.baseToolCount === 0
-  ) {
-    return state({
-      id:
-        "S03_WEBMCP_NOT_DETECTED",
-      key: "webmcp-missing",
-      mode: "RECOVERY",
-      owner: "SETUP REQUIRED",
-      action:
-        "Open this page in ChatGPT Desktop",
-      detail:
-        "The Human workspace works here, but Agent handoff requires WebMCP site tools.",
-      where:
-        "03 · Revision history → WebMCP",
-      goLabel:
-        "Go to WebMCP status",
-      returnWhen:
-        "Continue only when this page shows 5 WebMCP tools available.",
-      targetId: "next-agent"
-    });
-  }
-
-  if (
-    input.baseToolCount < 5
-  ) {
-    return state({
-      id:
-        "S04_WEBMCP_DEGRADED",
-      key: "webmcp-degraded",
-      mode: "RECOVERY",
-      owner: "RECOVERY",
-      action:
-        "Reload before using the Agent",
-      detail:
-        `Only ${input.baseToolCount} of 5 normal WebMCP tools registered. Do not start Agent work in a partial tool state.`,
-      where:
-        "03 · Revision history → WebMCP",
-      goLabel:
-        "Go to WebMCP status",
-      returnWhen:
-        "Continue only when all 5 normal tools are available.",
-      targetId: "next-agent"
-    });
-  }
-
   if (
     current.status ===
     "SUPERSEDED"
@@ -486,7 +402,7 @@ export function deriveGuidanceState(
 
     return state({
       id:
-        "S18_APPROVED_AGENT_HANDOFF",
+        "S18_APPROVED_DIRECT_APPLY",
       key: "apply",
       mode: "HUMAN",
       owner:
@@ -523,6 +439,95 @@ export function deriveGuidanceState(
       goLabel:
         "Go to approval",
       targetId: "next-approve"
+    });
+  }
+
+  if (input.lastAgentError) {
+    return state({
+      id: "S22_AGENT_TOOL_ERROR",
+      key: "agent-error",
+      mode: "RECOVERY",
+      owner: "RECOVERY",
+      action:
+        "Retry from the current workspace",
+      detail:
+        input.lastAgentError,
+      where:
+        "ChatGPT Desktop → current conversation",
+      prompt:
+        CONTINUE_CHATGPT_PROMPT,
+      returnWhen:
+        "Return here after ChatGPT completes the retry or asks for human judgment.",
+      targetId: "next-agent"
+    });
+  }
+
+  /*
+   * Registration is asynchronous. A transient zero must never
+   * be presented as "WebMCP not detected".
+   */
+  if (!input.baseToolsResolved) {
+    return state({
+      id:
+        "S02_CHECKING_WEBMCP",
+      key: "checking-webmcp",
+      mode: "RECOVERY",
+      owner: "CHECKING",
+      action:
+        "Checking WebMCP availability",
+      detail:
+        "No action is required while this page registers its site tools.",
+      where:
+        "03 · Revision history → WebMCP",
+      goLabel:
+        "Go to WebMCP status",
+      targetId: "next-agent"
+    });
+  }
+
+  if (
+    input.baseToolCount === 0
+  ) {
+    return state({
+      id:
+        "S03_WEBMCP_NOT_DETECTED",
+      key: "webmcp-missing",
+      mode: "RECOVERY",
+      owner: "SETUP REQUIRED",
+      action:
+        "Open this page in ChatGPT Desktop",
+      detail:
+        "The Human workspace works here, but Agent handoff requires WebMCP site tools.",
+      where:
+        "03 · Revision history → WebMCP",
+      goLabel:
+        "Go to WebMCP status",
+      returnWhen:
+        "Continue only when this page shows 5 WebMCP tools available.",
+      targetId: "next-agent"
+    });
+  }
+
+  if (
+    input.baseToolCount < 5
+  ) {
+    return state({
+      id:
+        "S04_WEBMCP_DEGRADED",
+      key: "webmcp-degraded",
+      mode: "RECOVERY",
+      owner: "RECOVERY",
+      action:
+        "Reload before using the Agent",
+      detail:
+        `Only ${input.baseToolCount} of 5 normal WebMCP tools registered. Do not start Agent work in a partial tool state.`,
+      where:
+        "03 · Revision history → WebMCP",
+      goLabel:
+        "Go to WebMCP status",
+      returnWhen:
+        "Continue only when all 5 normal tools are available.",
+      targetId: "next-agent"
     });
   }
 

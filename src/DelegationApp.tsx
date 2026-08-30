@@ -698,6 +698,20 @@ export default function DelegationApp() {
         "AGENT_ONLY"
     ).length;
 
+  const humanReviewRuleCount =
+    current.boundary.rules.filter(
+      (rule) =>
+        rule.outcome ===
+        "HUMAN_REVIEW"
+    ).length;
+
+  const doNotDelegateRuleCount =
+    current.boundary.rules.filter(
+      (rule) =>
+        rule.outcome ===
+        "DO_NOT_DELEGATE"
+    ).length;
+
   const statusLabel =
     STATUS_LABELS[lang][
       current.status
@@ -1103,8 +1117,8 @@ export default function DelegationApp() {
 
       setMessage(
         lang === "ja"
-          ? "この正確なRevisionを承認しました。Agentに反映操作を渡せる状態です。"
-          : "This exact revision is human-approved. The apply capability can now be exposed to the agent."
+          ? "この正確なRevisionを承認しました。下の基本操作から直接反映できます。WebMCP経由の反映は任意です。"
+          : "This exact revision is human-approved. Apply it directly below to complete. The WebMCP route is optional."
       );
     } catch (error) {
       setMessage(
@@ -1524,11 +1538,11 @@ export default function DelegationApp() {
         </div>
 
         <div className="adb-protocol-step">
-          <span>04 · AGENT</span>
+          <span>04 · HUMAN</span>
           <strong>
             {lang === "ja"
               ? "承認された版だけ反映"
-              : "Apply exact approval"}
+              : "Apply approved revision"}
           </strong>
         </div>
       </section>
@@ -1662,8 +1676,8 @@ export default function DelegationApp() {
 
               <p>
                 {lang === "ja"
-                  ? `AIだけで完了できるルール ${agentOnlyRuleCount}件 · その他は「${OUTCOME_LABELS.ja[current.boundary.defaultOutcome]}」`
-                  : `${agentOnlyRuleCount} agent-only ${agentOnlyRuleCount === 1 ? "rule" : "rules"} · Otherwise: ${OUTCOME_LABELS.en[current.boundary.defaultOutcome]}`}
+                  ? `ルール内訳：AIだけで完了 ${agentOnlyRuleCount}件 · 人の確認が必要 ${humanReviewRuleCount}件 · 委任しない ${doNotDelegateRuleCount}件 · その他は「${OUTCOME_LABELS.ja[current.boundary.defaultOutcome]}」`
+                  : `Rule outcomes: ${agentOnlyRuleCount} agent-only · ${humanReviewRuleCount} human review · ${doNotDelegateRuleCount} do not delegate · Otherwise: ${OUTCOME_LABELS.en[current.boundary.defaultOutcome]}`}
               </p>
             </div>
 
