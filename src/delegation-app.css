@@ -3438,7 +3438,7 @@ strong {
 }
 
 .adb-app .adb-guidance-meta > strong {
-  color: #244E95;
+  color: var(--ink);
 
   font-size: 12.5px;
   font-weight: 400;
