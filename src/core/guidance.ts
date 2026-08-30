@@ -90,6 +90,12 @@ export const INITIAL_CHATGPT_PROMPT =
 export const CONTINUE_CHATGPT_PROMPT =
   "Continue from the current workspace.";
 
+export function approvedApplyChatGPTPrompt(
+  revisionVersion: number
+) {
+  return `Human authorization: Apply the exact currently human-approved revision ${revisionVersion} using the available site tool. Do not modify or substitute the revision. Stop when the workspace shows Applied, or if the approval no longer matches the current revision.`;
+}
+
 function currentRevision(
   workspace: DelegationWorkspace
 ): DelegationRevision {
@@ -413,15 +419,15 @@ export function deriveGuidanceState(
         "S20_APPLIED_COMPLETE",
       key: "complete",
       mode: "COMPLETE",
-      owner: "COMPLETE",
+      owner: "WORKFLOW COMPLETE",
       action:
-        `Revision ${current.version} applied`,
+        `Revision ${current.version} applied successfully`,
       detail:
-        "The exact human-approved delegation state is now the applied state for this workspace.",
+        "The exact human-approved boundary is active. No further action is required for this workspace.",
       where:
-        "03 · Revision history → current revision",
+        "Top → completion report",
       targetId:
-        "next-current-revision"
+        "workflow-complete"
     });
   }
 
@@ -486,13 +492,15 @@ export function deriveGuidanceState(
       owner:
         "NEXT · CHATGPT",
       action:
-        "Continue in the current ChatGPT conversation",
+        `Apply approved revision ${current.version}`,
       detail:
-        "The approved apply capability is ready. Copy the instruction below, paste it into the current ChatGPT conversation, and send.",
+        "Explicit human authorization is required. Copy the instruction below, paste it into the current ChatGPT conversation, and send.",
       where:
         "02 · Review the change → approved revision handoff",
       prompt:
-        CONTINUE_CHATGPT_PROMPT,
+        approvedApplyChatGPTPrompt(
+          current.version
+        ),
       returnWhen:
         "Return here when the workspace shows Applied.",
       targetId: "next-approved"

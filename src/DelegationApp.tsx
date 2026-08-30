@@ -406,6 +406,14 @@ export default function DelegationApp() {
       null
     );
 
+  const completionCueRef =
+    useRef<HTMLDivElement>(
+      null
+    );
+
+  const completionScrolledRef =
+    useRef(false);
+
   const [message, setMessage] =
     useState<string | null>(
       initialSession.restored
@@ -661,6 +669,20 @@ export default function DelegationApp() {
         !result.passed
     ).length ?? null;
 
+  const resolvedChallenges =
+    current.challenges.filter(
+      (challenge) =>
+        challenge.status ===
+        "RESOLVED"
+    ).length;
+
+  const agentOnlyRuleCount =
+    current.boundary.rules.filter(
+      (rule) =>
+        rule.outcome ===
+        "AGENT_ONLY"
+    ).length;
+
   const statusLabel =
     STATUS_LABELS[lang][
       current.status
@@ -739,6 +761,50 @@ export default function DelegationApp() {
   useEffect(() => {
     setCopyFeedback("");
   }, [nextCue.prompt]);
+
+  useEffect(() => {
+    if (
+      current.status !==
+      "APPLIED"
+    ) {
+      completionScrolledRef.current =
+        false;
+      return;
+    }
+
+    if (
+      completionScrolledRef.current
+    ) {
+      return;
+    }
+
+    completionScrolledRef.current =
+      true;
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          const reduceMotion =
+            window.matchMedia(
+              "(prefers-reduced-motion: reduce)"
+            ).matches;
+
+          completionCueRef.current
+            ?.scrollIntoView({
+              behavior:
+                reduceMotion
+                  ? "auto"
+                  : "smooth",
+              block: "start"
+            });
+        }
+      );
+
+    return () =>
+      window.cancelAnimationFrame(
+        frame
+      );
+  }, [current.status]);
 
   const isGuidanceTarget = (
     targetId: string
@@ -1383,6 +1449,18 @@ export default function DelegationApp() {
       </section>
 
       <div
+        id={
+          current.status ===
+          "APPLIED"
+            ? "workflow-complete"
+            : undefined
+        }
+        ref={
+          current.status ===
+          "APPLIED"
+            ? completionCueRef
+            : undefined
+        }
         className={`adb-next-cue adb-guidance-${nextCue.mode.toLowerCase()}`}
         aria-live="polite"
         data-guidance-state={
@@ -1408,7 +1486,119 @@ export default function DelegationApp() {
           </small>
         </div>
 
-        {nextCue.where && (
+        {current.status ===
+          "APPLIED" && (
+          <section
+            className="adb-completion-report"
+            aria-labelledby="adb-completion-title"
+          >
+            <div className="adb-completion-report-head">
+              <span>
+                {lang === "ja"
+                  ? "完了レポート"
+                  : "COMPLETION REPORT"}
+              </span>
+
+              <strong id="adb-completion-title">
+                {lang === "ja"
+                  ? "このワークフローは完了しました"
+                  : "This workflow is complete"}
+              </strong>
+
+              <p>
+                {lang === "ja"
+                  ? "人が承認した境界が正確に反映されています。追加操作は不要です。"
+                  : "The exact human-approved boundary is active. No additional action is required."}
+              </p>
+            </div>
+
+            <dl className="adb-completion-metrics">
+              <div>
+                <dt>
+                  {lang === "ja"
+                    ? "反映済みRevision"
+                    : "Applied revision"}
+                </dt>
+                <dd>
+                  v{current.version}
+                </dd>
+              </div>
+
+              <div>
+                <dt>
+                  {lang === "ja"
+                    ? "Guardrail違反"
+                    : "Guardrail violations"}
+                </dt>
+                <dd>
+                  {guardrailViolations ??
+                    0}
+                </dd>
+              </div>
+
+              <div>
+                <dt>
+                  {lang === "ja"
+                    ? "保護された人の判断"
+                    : "Human decisions protected"}
+                </dt>
+                <dd>
+                  {
+                    current
+                      .knownDecisions
+                      .length
+                  }
+                </dd>
+              </div>
+
+              <div>
+                <dt>
+                  {lang === "ja"
+                    ? "解決済みChallenge"
+                    : "Challenges resolved"}
+                </dt>
+                <dd>
+                  {resolvedChallenges}/
+                  {
+                    current
+                      .challenges
+                      .length
+                  }
+                </dd>
+              </div>
+            </dl>
+
+            <div className="adb-completion-boundary">
+              <span>
+                {lang === "ja"
+                  ? "最終境界"
+                  : "FINAL BOUNDARY"}
+              </span>
+
+              <p>
+                {lang === "ja"
+                  ? `AIだけで完了できるルール ${agentOnlyRuleCount}件 · その他は「${OUTCOME_LABELS.ja[current.boundary.defaultOutcome]}」`
+                  : `${agentOnlyRuleCount} agent-only ${agentOnlyRuleCount === 1 ? "rule" : "rules"} · Otherwise: ${OUTCOME_LABELS.en[current.boundary.defaultOutcome]}`}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="adb-completion-new-work"
+              onClick={
+                requestStartNewWork
+              }
+            >
+              {lang === "ja"
+                ? "別の業務を始める"
+                : "Start new work"}
+            </button>
+          </section>
+        )}
+
+        {nextCue.where &&
+          current.status !==
+            "APPLIED" && (
           <div className="adb-guidance-meta">
             <span>WHERE</span>
             <strong>

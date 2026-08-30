@@ -3627,6 +3627,197 @@ strong {
     margin-left: 19px;
   }
 }
+
+/* ==========================================================
+   WORKFLOW COMPLETION REPORT
+   Applied is a terminal state, not another handoff.
+   ========================================================== */
+
+#workflow-complete {
+  scroll-margin-top: 12px;
+}
+
+.adb-app[data-next="complete"]
+.adb-next-cue {
+  border-bottom-color:
+    var(--ink);
+
+  background:
+    linear-gradient(
+      90deg,
+      #f8fbff,
+      #ffffff 72%
+    );
+}
+
+.adb-completion-report {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  gap: 16px 24px;
+  align-items: end;
+
+  grid-column: 1 / -1;
+
+  padding: 16px;
+
+  border:
+    1px solid var(--ink);
+  border-left:
+    4px solid var(--lime);
+
+  background: #ffffff;
+}
+
+.adb-completion-report-head {
+  display: grid;
+  gap: 4px;
+}
+
+.adb-completion-report-head > span,
+.adb-completion-boundary > span {
+  color: var(--action-blue);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+
+.adb-completion-report-head > strong {
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.adb-completion-report-head > p,
+.adb-completion-boundary > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.adb-completion-metrics {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  grid-column: 1 / -1;
+
+  margin: 0;
+
+  border-top:
+    1px solid var(--line);
+  border-bottom:
+    1px solid var(--line);
+}
+
+.adb-completion-metrics > div {
+  display: grid;
+  gap: 5px;
+
+  min-width: 0;
+  padding: 11px 12px;
+
+  border-right:
+    1px solid var(--line);
+}
+
+.adb-completion-metrics > div:first-child {
+  padding-left: 0;
+}
+
+.adb-completion-metrics > div:last-child {
+  border-right: 0;
+}
+
+.adb-completion-metrics dt {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.adb-completion-metrics dd {
+  margin: 0;
+  color: var(--ink);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.adb-completion-boundary {
+  display: grid;
+  gap: 4px;
+}
+
+.adb-completion-new-work {
+  min-height: 42px;
+  padding: 9px 16px;
+
+  border:
+    1px solid var(--ink);
+
+  background: var(--ink);
+  color: #ffffff;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.adb-completion-new-work:hover,
+.adb-completion-new-work:focus-visible {
+  border-color:
+    var(--action-blue);
+  background:
+    var(--action-blue);
+  color: #ffffff;
+}
+
+.adb-completion-new-work:focus-visible {
+  outline:
+    3px solid
+    rgba(36, 78, 149, .22);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .adb-completion-report {
+    grid-template-columns: 1fr;
+  }
+
+  .adb-completion-metrics {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .adb-completion-metrics > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .adb-completion-metrics > div:first-child,
+  .adb-completion-metrics > div:nth-child(3) {
+    padding-left: 0;
+  }
+
+  .adb-completion-metrics > div:nth-child(-n + 2) {
+    border-bottom:
+      1px solid var(--line);
+  }
+
+  .adb-completion-new-work {
+    width: 100%;
+  }
+}
 /* ==========================================================
    WHERE LOCATION CUE V3
    NEXT = action cue. WHERE = location cue.

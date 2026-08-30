@@ -753,7 +753,7 @@ const cases: Case[] = [
     id:
       "S20_APPLIED_COMPLETE",
     expectedWhere:
-      "03 · Revision history → current revision",
+      "Top → completion report",
     build: () => {
       const value =
         workspace();
@@ -866,6 +866,62 @@ describe(
           result.goLabel
         ).toBe(
           expectedGoLabel
+        );
+      }
+    );
+
+    it(
+      "makes the approved handoff an explicit, revision-scoped authorization",
+      () => {
+        const value = workspace();
+
+        current(value).status =
+          "APPROVED";
+
+        const result = derive(
+          value,
+          {
+            applyToolState:
+              "available"
+          }
+        );
+
+        expect(result.id).toBe(
+          "S18_APPROVED_AGENT_HANDOFF"
+        );
+        expect(result.prompt).toContain(
+          "Human authorization"
+        );
+        expect(result.prompt).toContain(
+          "revision 1"
+        );
+        expect(result.prompt).toContain(
+          "Stop when the workspace shows Applied"
+        );
+        expect(result.prompt).not.toContain(
+          "Continue from the current workspace"
+        );
+      }
+    );
+
+    it(
+      "marks the applied state as complete with no further action",
+      () => {
+        const value = workspace();
+
+        current(value).status =
+          "APPLIED";
+
+        const result = derive(value);
+
+        expect(result.owner).toBe(
+          "WORKFLOW COMPLETE"
+        );
+        expect(result.detail).toContain(
+          "No further action is required"
+        );
+        expect(result.targetId).toBe(
+          "workflow-complete"
         );
       }
     );
@@ -990,11 +1046,11 @@ describe(
         );
 
         expect(result.action).toBe(
-          "Continue in the current ChatGPT conversation"
+          "Apply approved revision 1"
         );
 
         expect(result.detail).toContain(
-          "Copy the instruction below"
+          "Explicit human authorization"
         );
 
         expect(result.detail).toContain(
