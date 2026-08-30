@@ -677,6 +677,22 @@ export default function DelegationApp() {
       lastAgentError
     });
 
+  /*
+   * The WHERE target and the in-page attention pointer share
+   * one source of truth. Copy-ready ChatGPT handoffs intentionally
+   * have no in-page pointer because the destination is external.
+   */
+  const pageGuidanceTargetId =
+    nextCue.prompt
+      ? null
+      : nextCue.targetId;
+
+  const isGuidanceTarget = (
+    targetId: string
+  ) =>
+    pageGuidanceTargetId ===
+    targetId;
+
   const copyGuidancePrompt =
     async () => {
       if (!nextCue.prompt) {
@@ -1094,7 +1110,13 @@ export default function DelegationApp() {
 
         <button
           id="next-start-new"
-          className="adb-reset"
+          className={`adb-reset ${
+            isGuidanceTarget(
+              "next-start-new"
+            )
+              ? "is-guidance-target"
+              : ""
+          }`}
           type="button"
           onClick={reset}
         >
@@ -1403,6 +1425,12 @@ export default function DelegationApp() {
               taskConfigured
                 ? "is-scoped"
                 : "is-setup"
+            }${
+              isGuidanceTarget(
+                "next-task"
+              )
+                ? " is-guidance-target"
+                : ""
             }`}
           >
             <span className="adb-card-label">
@@ -1529,7 +1557,13 @@ export default function DelegationApp() {
 
           <div
             id="next-boundary"
-            className="adb-rules"
+            className={`adb-rules${
+              isGuidanceTarget(
+                "next-boundary"
+              )
+                ? " is-guidance-target"
+                : ""
+            }`}
           >
             {[...current.boundary.rules]
               .sort(
@@ -1540,7 +1574,13 @@ export default function DelegationApp() {
               .map((rule) => (
                 <article
                   id={`boundary-rule-${rule.id}`}
-                  className="adb-rule-card"
+                  className={`adb-rule-card${
+                    isGuidanceTarget(
+                      `boundary-rule-${rule.id}`
+                    )
+                      ? " is-guidance-target"
+                      : ""
+                  }`}
                   key={rule.id}
                 >
                   <div className="adb-rule-head">
@@ -1767,7 +1807,13 @@ export default function DelegationApp() {
 
           <div
             id="next-guardrails"
-            className="adb-review-block"
+            className={`adb-review-block${
+              isGuidanceTarget(
+                "next-guardrails"
+              )
+                ? " is-guidance-target"
+                : ""
+            }`}
           >
             <div className="adb-block-head">
               <div>
@@ -2012,7 +2058,15 @@ export default function DelegationApp() {
                     challenge
                   ) => (
                     <article
-                      className={`adb-challenge ${challenge.status.toLowerCase()}`}
+                      className={`adb-challenge ${challenge.status.toLowerCase()}${
+                        isGuidanceTarget(
+                          "next-challenge"
+                        ) &&
+                        challenge.id ===
+                          nextOpenChallengeId
+                          ? " is-guidance-target"
+                          : ""
+                      }`}
                       id={
                         challenge.id ===
                         nextOpenChallengeId
@@ -2141,7 +2195,13 @@ export default function DelegationApp() {
                 "APPLIED" && (
                 <button
                   id="next-review"
-                  className="adb-check-button"
+                  className={`adb-check-button${
+                    isGuidanceTarget(
+                      "next-review"
+                    )
+                      ? " is-guidance-target"
+                      : ""
+                  }`}
                   type="button"
                   disabled={
                     !taskConfigured
@@ -2160,7 +2220,13 @@ export default function DelegationApp() {
               "READY_FOR_DECISION" && (
               <button
                 id="next-approve"
-                className="adb-approve-button"
+                className={`adb-approve-button${
+                  isGuidanceTarget(
+                    "next-approve"
+                  )
+                    ? " is-guidance-target"
+                    : ""
+                }`}
                 type="button"
                 onClick={
                   approve
@@ -2197,7 +2263,13 @@ export default function DelegationApp() {
               "APPLIED" && (
               <div
                 id="next-complete"
-                className="adb-applied-card"
+                className={`adb-applied-card${
+                  isGuidanceTarget(
+                    "next-complete"
+                  )
+                    ? " is-guidance-target"
+                    : ""
+                }`}
               >
                 <span>
                   APPLIED
@@ -2263,6 +2335,14 @@ export default function DelegationApp() {
                       workspace.currentRevisionId
                         ? "current"
                         : ""
+                    }${
+                      revision.id ===
+                        workspace.currentRevisionId &&
+                      isGuidanceTarget(
+                        "next-current-revision"
+                      )
+                        ? " is-guidance-target"
+                        : ""
                     }`}
                     key={
                       revision.id
@@ -2317,7 +2397,13 @@ export default function DelegationApp() {
 
           <div
             id="next-agent"
-            className="adb-agent-card"
+            className={`adb-agent-card${
+              isGuidanceTarget(
+                "next-agent"
+              )
+                ? " is-guidance-target"
+                : ""
+            }`}
           >
             <div className="adb-agent-card-head">
               <div>

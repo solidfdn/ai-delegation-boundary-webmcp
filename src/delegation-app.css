@@ -3564,3 +3564,103 @@ strong {
     margin-top: 4px;
   }
 }
+/* ==========================================================
+   ACTIVE WHERE TARGET POINTER V1
+   WHERE names the destination; this marker shows it in place.
+   ========================================================== */
+
+.adb-app {
+  --target-pointer: #244E95;
+}
+
+/*
+ * The active destination pointer is intentionally larger than
+ * the 7px NEXT / WHERE guide dots. It is static rather than
+ * animated: attention without visual noise.
+ */
+.adb-app
+:is(
+  .adb-task-card,
+  .adb-review-block,
+  .adb-agent-card
+).is-guidance-target
+.adb-card-label::after,
+
+.adb-app
+.adb-rule-card.is-guidance-target
+.adb-rule-head > strong::after,
+
+.adb-app
+.adb-challenge.is-guidance-target
+.adb-challenge-head > strong::after,
+
+.adb-app
+.adb-timeline-row.is-guidance-target
+.adb-timeline-title > strong::after,
+
+.adb-app
+:is(
+  .adb-reset,
+  .adb-check-button,
+  .adb-approve-button
+).is-guidance-target::after,
+
+.adb-app
+.adb-applied-card.is-guidance-target
+> span::after {
+  display: inline-block;
+
+  width: 9px;
+  height: 9px;
+
+  margin-left: 8px;
+
+  border-radius: 50%;
+
+  background:
+    var(--target-pointer);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(36, 78, 149, .11);
+
+  vertical-align: .02em;
+
+  content: "";
+}
+
+/*
+ * Rare fallback: if the review can identify the boundary area
+ * but not a specific matching rule, mark only the rules container.
+ */
+.adb-app
+.adb-rules.is-guidance-target {
+  position: relative;
+}
+
+.adb-app
+.adb-rules.is-guidance-target::before {
+  position: absolute;
+
+  top: 2px;
+  right: 2px;
+
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+
+  background:
+    var(--target-pointer);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(36, 78, 149, .11);
+
+  content: "";
+}
+
+/*
+ * No pointer is created for ChatGPT handoffs. Those states have
+ * a copy-ready prompt and pageGuidanceTargetId is null.
+ */
