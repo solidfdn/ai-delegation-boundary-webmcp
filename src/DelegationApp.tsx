@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import {
+  applyApprovedRevision,
   approveCurrentRevision,
   getCurrentRevision,
   reviewRevision
@@ -27,6 +28,7 @@ import type {
 } from "./core/types";
 
 import {
+  approvedApplyChatGPTPrompt,
   deriveGuidanceState,
   type ApplyToolState
 } from "./core/guidance";
@@ -382,6 +384,11 @@ export default function DelegationApp() {
   ] = useState("");
 
   const [
+    directApplyBusy,
+    setDirectApplyBusy
+  ] = useState(false);
+
+  const [
     startNewDialogOpen,
     setStartNewDialogOpen
   ] = useState(false);
@@ -405,6 +412,14 @@ export default function DelegationApp() {
     useRef<HTMLTextAreaElement>(
       null
     );
+
+  const approvalPromptRef =
+    useRef<HTMLTextAreaElement>(
+      null
+    );
+
+  const directApplyBusyRef =
+    useRef(false);
 
   const completionCueRef =
     useRef<HTMLDivElement>(
@@ -719,6 +734,16 @@ export default function DelegationApp() {
       lastAgentError
     });
 
+  const approvalAgentPrompt =
+    current.status ===
+      "APPROVED" &&
+    applyToolState ===
+      "available"
+      ? approvedApplyChatGPTPrompt(
+          current.version
+        )
+      : null;
+
   const inlineBoundaryPromptTargetId =
     nextCue.prompt &&
     (
@@ -733,17 +758,8 @@ export default function DelegationApp() {
       ? nextCue.targetId
       : null;
 
-  const inlineApprovalPromptTargetId =
-    nextCue.id ===
-      "S18_APPROVED_AGENT_HANDOFF" &&
-    nextCue.prompt &&
-    current.status === "APPROVED"
-      ? "next-approved"
-      : null;
-
   const inlinePromptTargetId =
-    inlineBoundaryPromptTargetId ??
-    inlineApprovalPromptTargetId;
+    inlineBoundaryPromptTargetId;
 
   /*
    * The WHERE target and the in-page attention pointer share
@@ -760,7 +776,10 @@ export default function DelegationApp() {
 
   useEffect(() => {
     setCopyFeedback("");
-  }, [nextCue.prompt]);
+  }, [
+    nextCue.prompt,
+    approvalAgentPrompt
+  ]);
 
   useEffect(() => {
     if (
@@ -812,50 +831,64 @@ export default function DelegationApp() {
     pageGuidanceTargetId ===
     targetId;
 
-  const copyGuidancePrompt =
-    async () => {
-      if (!nextCue.prompt) {
+  const copyPrompt = async (
+    prompt: string | null | undefined,
+    target:
+      HTMLTextAreaElement | null
+  ) => {
+    if (!prompt) {
+      return;
+    }
+
+    setCopyFeedback("");
+
+    try {
+      await navigator.clipboard
+        .writeText(
+          prompt
+        );
+
+      setCopyFeedback(
+        "Copied"
+      );
+    } catch {
+      if (!target) {
+        setCopyFeedback(
+          "Select and copy the text above."
+        );
+
         return;
       }
 
-      setCopyFeedback("");
+      target.focus();
+      target.select();
 
-      try {
-        await navigator.clipboard
-          .writeText(
-            nextCue.prompt
-          );
-
-        setCopyFeedback(
-          "Copied"
+      const copied =
+        document.execCommand(
+          "copy"
         );
-      } catch {
-        const target =
-          guidancePromptRef.current;
 
-        if (!target) {
-          setCopyFeedback(
-            "Select and copy the text above."
-          );
+      setCopyFeedback(
+        copied
+          ? "Copied"
+          : "Selected — press Ctrl+C."
+      );
+    }
+  };
 
-          return;
-        }
+  const copyGuidancePrompt =
+    () =>
+      copyPrompt(
+        nextCue.prompt,
+        guidancePromptRef.current
+      );
 
-        target.focus();
-        target.select();
-
-        const copied =
-          document.execCommand(
-            "copy"
-          );
-
-        setCopyFeedback(
-          copied
-            ? "Copied"
-            : "Selected — press Ctrl+C."
-        );
-      }
-    };
+  const copyApprovalPrompt =
+    () =>
+      copyPrompt(
+        approvalAgentPrompt,
+        approvalPromptRef.current
+      );
 
   const showNextStep = () => {
     const target =
@@ -1081,6 +1114,58 @@ export default function DelegationApp() {
       );
     }
   };
+
+  const applyApprovedDirectly =
+    async () => {
+      if (
+        directApplyBusyRef.current
+      ) {
+        return;
+      }
+
+      directApplyBusyRef.current =
+        true;
+      setDirectApplyBusy(true);
+      setMessage(null);
+
+      const source =
+        workspaceRef.current;
+
+      try {
+        const applied =
+          await applyApprovedRevision(
+            source
+          );
+
+        if (
+          workspaceRef.current !==
+          source
+        ) {
+          throw new Error(
+            "The workspace changed while the approved revision was being verified. Review the current state before applying again."
+          );
+        }
+
+        updateWorkspace(applied);
+        setLastAgentError(null);
+
+        setMessage(
+          lang === "ja"
+            ? `承認済みRevision ${getCurrentRevision(applied).version} を反映しました。`
+            : `Approved revision ${getCurrentRevision(applied).version} was applied from the human workspace.`
+        );
+      } catch (error) {
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : String(error)
+        );
+      } finally {
+        directApplyBusyRef.current =
+          false;
+        setDirectApplyBusy(false);
+      }
+    };
 
   const resolveChallenge = (
     challengeId: string,
@@ -2579,13 +2664,7 @@ export default function DelegationApp() {
               "APPROVED" && (
               <div
                 id="next-approved"
-                className={`adb-approved-card${
-                  isGuidanceTarget(
-                    "next-approved"
-                  )
-                    ? " is-guidance-target"
-                    : ""
-                }`}
+                className="adb-approved-card"
               >
                 <span>
                   {lang === "ja"
@@ -2603,78 +2682,86 @@ export default function DelegationApp() {
                     : "This exact revision is human-approved. Only the current approved state can be applied."}
                 </p>
 
-                <div className="adb-approved-handoff">
-                  <div className="adb-handoff-step is-complete">
-                    <span>1</span>
+                <div
+                  id="next-apply-direct"
+                  className={`adb-approved-direct${
+                    isGuidanceTarget(
+                      "next-apply-direct"
+                    )
+                      ? " is-guidance-target"
+                      : ""
+                  }`}
+                >
+                  <span>
+                    {lang === "ja"
+                      ? "ここで完了"
+                      : "COMPLETE HERE"}
+                  </span>
 
-                    <div>
-                      <strong>
-                        {lang === "ja"
-                          ? "人の承認を記録"
-                          : "Human approval recorded"}
-                      </strong>
+                  <strong>
+                    {lang === "ja"
+                      ? `承認済みRevision ${current.version} を反映`
+                      : `Apply approved revision ${current.version}`}
+                  </strong>
 
-                      <small>
-                        {lang === "ja"
-                          ? `Revision ${current.version} の正確な状態を固定しました。`
-                          : `The exact state of revision ${current.version} is locked.`}
-                      </small>
-                    </div>
-                  </div>
+                  <p>
+                    {lang === "ja"
+                      ? "適用直前にRevision IDと承認時のfingerprintを再検証します。ChatGPTへの貼り付けは不要です。"
+                      : "Revision ID and the human-approved fingerprint are verified again immediately before application. No ChatGPT handoff is required."}
+                  </p>
 
-                  <div
-                    className={`adb-handoff-step${
-                      applyToolState ===
-                        "available"
-                        ? " is-complete"
+                  <button
+                    type="button"
+                    disabled={
+                      directApplyBusy
+                    }
+                    onClick={
+                      applyApprovedDirectly
+                    }
+                  >
+                    {directApplyBusy
+                      ? lang === "ja"
+                        ? "承認内容を検証中…"
+                        : "Verifying approval…"
+                      : lang === "ja"
+                        ? `Revision ${current.version} を反映して完了`
+                        : `Apply revision ${current.version} and complete`}
+                  </button>
+                </div>
+
+                <div className="adb-approved-agent-option">
+                  <div className="adb-approved-agent-head">
+                    <span>
+                      OPTIONAL · WEBMCP
+                    </span>
+
+                    <strong>
+                      {lang === "ja"
+                        ? "ChatGPTに適用を委ねる"
+                        : "Apply with ChatGPT"}
+                    </strong>
+
+                    <small>
+                      {applyToolState ===
+                      "available"
+                        ? lang === "ja"
+                          ? "同じ承認済みRevisionを、WebMCP経由でAgentに反映させる場合に使用します。"
+                          : "Use this optional route to let the Agent apply the same approved revision through WebMCP."
                         : applyToolState ===
                             "failed"
-                          ? " is-failed"
-                          : " is-pending"
-                    }`}
-                  >
-                    <span>2</span>
-
-                    <div>
-                      <strong>
-                        {applyToolState ===
-                        "available"
                           ? lang === "ja"
-                            ? "適用機能の準備完了"
-                            : "Approved apply capability ready"
-                          : applyToolState ===
-                              "failed"
-                            ? lang === "ja"
-                              ? "適用機能を準備できませんでした"
-                              : "Apply capability needs a retry"
-                            : lang === "ja"
-                              ? "安全な適用機能を準備中"
-                              : "Preparing the secure apply capability"}
-                      </strong>
-
-                      <small>
-                        {applyToolState ===
-                        "available"
-                          ? lang === "ja"
-                            ? "この承認済みRevisionだけに利用できます。"
-                            : "Available only for this exact approved revision."
-                          : applyToolState ===
-                              "failed"
-                            ? lang === "ja"
-                              ? "ページを再読み込みしてください。承認は保持されています。"
-                              : "Reload this page. The human approval is preserved."
-                            : lang === "ja"
-                              ? "このままお待ちください。次の操作が自動表示されます。"
-                              : "Stay here. The next action will appear automatically."}
-                      </small>
-                    </div>
+                            ? "WebMCPの適用機能を準備できませんでした。上の基本操作は引き続き利用できます。"
+                            : "The WebMCP apply capability is unavailable. Direct apply above remains available."
+                          : lang === "ja"
+                            ? "WebMCPの適用機能を準備中です。上の基本操作はすぐに利用できます。"
+                            : "The WebMCP apply capability is preparing. Direct apply above is already available."}
+                    </small>
                   </div>
 
-                  {inlineApprovalPromptTargetId &&
-                    nextCue.prompt && (
+                  {approvalAgentPrompt && (
                     <div className="adb-guidance-prompt adb-approval-guidance-prompt">
                       <label htmlFor="adb-approval-guidance-prompt">
-                        3 · SEND TO CURRENT CHATGPT CONVERSATION
+                        SEND TO CURRENT CHATGPT CONVERSATION
                       </label>
 
                       <strong>
@@ -2685,10 +2772,10 @@ export default function DelegationApp() {
 
                       <textarea
                         id="adb-approval-guidance-prompt"
-                        ref={guidancePromptRef}
+                        ref={approvalPromptRef}
                         readOnly
                         rows={3}
-                        value={nextCue.prompt}
+                        value={approvalAgentPrompt}
                         onFocus={(event) =>
                           event.currentTarget
                             .select()
@@ -2699,7 +2786,7 @@ export default function DelegationApp() {
                         <button
                           type="button"
                           onClick={
-                            copyGuidancePrompt
+                            copyApprovalPrompt
                           }
                         >
                           Copy instruction for ChatGPT

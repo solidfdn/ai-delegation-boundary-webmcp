@@ -830,9 +830,97 @@ button {
   line-height: 1.5;
 }
 
-.adb-approved-handoff {
+.adb-approved-direct {
   display: grid;
-  gap: 10px;
+  gap: 7px;
+
+  margin-top: 16px;
+  padding: 14px;
+
+  border:
+    1px solid var(--ink);
+  border-left:
+    4px solid var(--lime);
+
+  background:
+    var(--guide-soft, #f6f9fc);
+}
+
+.adb-approved-direct > span,
+.adb-approved-agent-head > span {
+  color: var(--action-blue);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+
+.adb-approved-direct > strong {
+  color: var(--ink);
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.adb-approved-card
+.adb-approved-direct > p {
+  margin: 0;
+}
+
+.adb-approved-direct > button {
+  min-height: 46px;
+  margin-top: 5px;
+  padding: 9px 14px;
+
+  border:
+    1px solid var(--ink);
+
+  background: var(--ink);
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.adb-approved-direct > button:hover,
+.adb-approved-direct > button:focus-visible {
+  border-color:
+    var(--action-blue);
+  background:
+    var(--action-blue);
+  color: #ffffff;
+}
+
+.adb-approved-direct > button:focus-visible {
+  outline:
+    3px solid
+    rgba(36, 78, 149, .22);
+  outline-offset: 2px;
+}
+
+.adb-approved-direct > button:disabled {
+  border-color:
+    var(--line-strong);
+  background:
+    var(--line-strong);
+  color: #ffffff;
+  cursor: wait;
+}
+
+.adb-approved-direct.is-guidance-target {
+  outline:
+    2px solid
+    rgba(36, 78, 149, .38);
+  outline-offset: 3px;
+}
+
+.adb-approved-agent-option {
+  display: grid;
+  gap: 12px;
 
   margin-top: 16px;
   padding-top: 14px;
@@ -841,62 +929,18 @@ button {
     1px solid var(--line);
 }
 
-.adb-handoff-step {
+.adb-approved-agent-head {
   display: grid;
-  grid-template-columns:
-    24px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
+  gap: 4px;
 }
 
-.adb-handoff-step > span {
-  display: grid;
-  place-items: center;
-
-  width: 24px;
-  height: 24px;
-
-  border:
-    1px solid var(--line-strong);
-
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 800;
-}
-
-.adb-handoff-step.is-complete > span {
-  border-color:
-    var(--action-blue);
-
-  background:
-    var(--action-blue);
-
-  color: #ffffff;
-}
-
-.adb-handoff-step.is-pending > span {
-  border-color: var(--lime);
-  background: var(--lime-whisper);
-  color: var(--ink);
-}
-
-.adb-handoff-step.is-failed > span {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.adb-handoff-step > div {
-  display: grid;
-  gap: 3px;
-}
-
-.adb-handoff-step strong {
+.adb-approved-agent-head > strong {
   color: var(--ink);
   font-size: 11px;
   line-height: 1.4;
 }
 
-.adb-handoff-step small {
+.adb-approved-agent-head > small {
   color: var(--muted);
   font-size: 10px;
   line-height: 1.5;
@@ -2125,6 +2169,7 @@ select:focus-visible {
 #next-challenge,
 #next-review,
 #next-approve,
+#next-apply-direct,
 #next-agent,
 #next-complete {
   scroll-margin-top: 82px;

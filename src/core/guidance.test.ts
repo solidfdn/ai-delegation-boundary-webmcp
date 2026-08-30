@@ -15,6 +15,7 @@ import type {
 } from "./types";
 
 import {
+  approvedApplyChatGPTPrompt,
   deriveGuidanceState,
   GUIDANCE_STATE_COUNT,
   type ApplyToolState,
@@ -650,9 +651,9 @@ const cases: Case[] = [
     id:
       "S17_APPLY_TOOL_REGISTERING",
     expectedWhere:
-      "02 · Review the change → approved revision handoff",
+      "02 · Review the change → Apply approved revision 1",
     expectedGoLabel:
-      "Go to approved handoff",
+      "Go to direct apply",
     build: () => {
       const value =
         workspace();
@@ -685,7 +686,9 @@ const cases: Case[] = [
     id:
       "S18_APPROVED_AGENT_HANDOFF",
     expectedWhere:
-      "02 · Review the change → approved revision handoff",
+      "02 · Review the change → Apply approved revision 1",
+    expectedGoLabel:
+      "Go to direct apply",
     build: () => {
       const value =
         workspace();
@@ -718,9 +721,9 @@ const cases: Case[] = [
     id:
       "S19_APPLY_TOOL_FAILED",
     expectedWhere:
-      "02 · Review the change → approved revision handoff",
+      "02 · Review the change → Apply approved revision 1",
     expectedGoLabel:
-      "Go to approved handoff",
+      "Go to direct apply",
     build: () => {
       const value =
         workspace();
@@ -871,34 +874,23 @@ describe(
     );
 
     it(
-      "makes the approved handoff an explicit, revision-scoped authorization",
+      "keeps the optional ChatGPT instruction explicitly revision-scoped",
       () => {
-        const value = workspace();
+        const prompt =
+          approvedApplyChatGPTPrompt(
+            6
+          );
 
-        current(value).status =
-          "APPROVED";
-
-        const result = derive(
-          value,
-          {
-            applyToolState:
-              "available"
-          }
-        );
-
-        expect(result.id).toBe(
-          "S18_APPROVED_AGENT_HANDOFF"
-        );
-        expect(result.prompt).toContain(
+        expect(prompt).toContain(
           "Human authorization"
         );
-        expect(result.prompt).toContain(
-          "revision 1"
+        expect(prompt).toContain(
+          "revision 6"
         );
-        expect(result.prompt).toContain(
+        expect(prompt).toContain(
           "Stop when the workspace shows Applied"
         );
-        expect(result.prompt).not.toContain(
+        expect(prompt).not.toContain(
           "Continue from the current workspace"
         );
       }
@@ -1022,7 +1014,7 @@ describe(
     );
 
     it(
-      "makes the approved handoff self-contained without asking the user to inspect tool counts",
+      "makes direct apply the primary approved action without tool-count instructions",
       () => {
         const approvedCase =
           cases.find(
@@ -1050,17 +1042,61 @@ describe(
         );
 
         expect(result.detail).toContain(
-          "Explicit human authorization"
+          "Complete directly in this workspace"
         );
 
+        expect(result.mode).toBe(
+          "HUMAN"
+        );
+
+        expect(result.targetId).toBe(
+          "next-apply-direct"
+        );
+
+        expect(result.prompt).toBeUndefined();
+
         expect(result.detail).toContain(
-          "paste it into the current ChatGPT conversation"
+          "optional WebMCP apply route"
         );
 
         expect(
           `${result.action} ${result.detail} ${result.returnWhen}`
         ).not.toContain(
           "6 tools"
+        );
+      }
+    );
+
+    it.each([
+      "registering",
+      "available",
+      "failed"
+    ] as const)(
+      "keeps direct apply available while the optional WebMCP route is %s",
+      (applyToolState) => {
+        const value = workspace();
+
+        current(value).status =
+          "APPROVED";
+
+        const result = derive(
+          value,
+          {
+            applyToolState
+          }
+        );
+
+        expect(result.mode).toBe(
+          "HUMAN"
+        );
+        expect(result.action).toBe(
+          "Apply approved revision 1"
+        );
+        expect(result.targetId).toBe(
+          "next-apply-direct"
+        );
+        expect(result.goLabel).toBe(
+          "Go to direct apply"
         );
       }
     );

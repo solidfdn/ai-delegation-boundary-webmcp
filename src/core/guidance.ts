@@ -446,17 +446,18 @@ export function deriveGuidanceState(
           "S17_APPLY_TOOL_REGISTERING",
         key:
           "apply-registering",
-        mode: "RECOVERY",
-        owner: "CHECKING",
+        mode: "HUMAN",
+        owner: "NEXT · HUMAN",
         action:
-          "Preparing the approved handoff",
+          `Apply approved revision ${current.version}`,
         detail:
-          "Stay here. The copy action will appear automatically when the approved apply capability is ready.",
+          "Complete directly in this workspace. The optional ChatGPT apply capability is still preparing.",
         where:
-          "02 · Review the change → approved revision handoff",
+          `02 · Review the change → Apply approved revision ${current.version}`,
         goLabel:
-          "Go to approved handoff",
-        targetId: "next-approved"
+          "Go to direct apply",
+        targetId:
+          "next-apply-direct"
       });
     }
 
@@ -468,19 +469,18 @@ export function deriveGuidanceState(
         id:
           "S19_APPLY_TOOL_FAILED",
         key: "apply-failed",
-        mode: "RECOVERY",
-        owner: "RECOVERY",
+        mode: "HUMAN",
+        owner: "NEXT · HUMAN",
         action:
-          "Reload to retry the approved handoff",
+          `Apply approved revision ${current.version}`,
         detail:
-          "Human approval is preserved, but the additional apply capability did not register.",
+          "Complete directly in this workspace. The optional ChatGPT apply route is unavailable until the page is reloaded.",
         where:
-          "02 · Review the change → approved revision handoff",
+          `02 · Review the change → Apply approved revision ${current.version}`,
         goLabel:
-          "Go to approved handoff",
-        returnWhen:
-          "Reload this page. The approval is preserved and the handoff retries automatically.",
-        targetId: "next-approved"
+          "Go to direct apply",
+        targetId:
+          "next-apply-direct"
       });
     }
 
@@ -488,22 +488,19 @@ export function deriveGuidanceState(
       id:
         "S18_APPROVED_AGENT_HANDOFF",
       key: "apply",
-      mode: "CHATGPT",
+      mode: "HUMAN",
       owner:
-        "NEXT · CHATGPT",
+        "NEXT · HUMAN",
       action:
         `Apply approved revision ${current.version}`,
       detail:
-        "Explicit human authorization is required. Copy the instruction below, paste it into the current ChatGPT conversation, and send.",
+        "Complete directly in this workspace. ChatGPT remains available as an optional WebMCP apply route.",
       where:
-        "02 · Review the change → approved revision handoff",
-      prompt:
-        approvedApplyChatGPTPrompt(
-          current.version
-        ),
-      returnWhen:
-        "Return here when the workspace shows Applied.",
-      targetId: "next-approved"
+        `02 · Review the change → Apply approved revision ${current.version}`,
+      goLabel:
+        "Go to direct apply",
+      targetId:
+        "next-apply-direct"
     });
   }
 
