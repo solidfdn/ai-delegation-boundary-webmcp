@@ -3494,3 +3494,73 @@ strong {
     margin-left: 19px;
   }
 }
+/* ==========================================================
+   WHERE LOCATION CUE V3
+   NEXT = action cue. WHERE = location cue.
+   ========================================================== */
+
+.adb-app {
+  --where-rose: #D8A7B1;
+}
+
+.adb-app .adb-guidance-meta {
+  position: relative;
+
+  grid-template-columns:
+    94px minmax(0, 1fr) auto;
+}
+
+/*
+ * The WHERE marker shares the same 7px geometry and left edge
+ * as the NEXT marker, but uses a quiet rose so it reads as a
+ * location cue rather than an action or warning state.
+ */
+.adb-app .adb-guidance-meta::before {
+  position: absolute;
+
+  top: 12px;
+  left: 0;
+
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background:
+    var(--where-rose);
+
+  box-shadow:
+    0 0 0 4px
+    rgba(216, 167, 177, .12);
+
+  content: "";
+}
+
+/*
+ * Session restoration is system context, not workflow guidance.
+ * Keep it on the far edge of the WHERE row.
+ */
+.adb-app .adb-session-restored {
+  justify-self: end;
+
+  color: var(--faint);
+
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: .10em;
+
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .adb-app .adb-guidance-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .adb-app .adb-session-restored {
+    justify-self: start;
+
+    margin-top: 4px;
+  }
+}

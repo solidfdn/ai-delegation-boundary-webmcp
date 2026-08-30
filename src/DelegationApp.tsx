@@ -1290,6 +1290,17 @@ export default function DelegationApp() {
             <strong>
               {nextCue.where}
             </strong>
+
+            {message ===
+              "Session restored after reload." && (
+              <span
+                className="adb-session-restored"
+                role="status"
+                aria-label="Session restored after reload."
+              >
+                SESSION RESTORED
+              </span>
+            )}
           </div>
         )}
 
@@ -1354,7 +1365,9 @@ export default function DelegationApp() {
           </button>
         )}
 
-        {message && (
+        {message &&
+          message !==
+            "Session restored after reload." && (
           <div
             className="adb-message"
             role="status"
