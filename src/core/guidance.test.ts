@@ -898,5 +898,71 @@ describe(
         }
       }
     );
+
+    it(
+      "creates a copy-ready human instruction for a known-decision regression",
+      () => {
+        const blockedCase =
+          cases.find(
+            (item) =>
+              item.id ===
+              "S14_BLOCKED_REGRESSION"
+          );
+
+        if (!blockedCase) {
+          throw new Error(
+            "Regression guidance case is missing."
+          );
+        }
+
+        const built =
+          blockedCase.build();
+
+        const result = derive(
+          built.workspace,
+          built.overrides
+        );
+
+        expect(result.prompt).toBe(
+          "Human decision: Preserve the recorded Human Decision. Adjust the conflicting boundary so the failed scenario remains HUMAN_REVIEW. If the existing factors cannot safely distinguish the failed scenario, you are authorized to remove the conflicting agent-only rule. Continue with the available site tools until the next human judgment is required."
+        );
+
+        expect(
+          result.returnWhen
+        ).toBe(
+          "Return here when ChatGPT asks for the next Human Decision."
+        );
+      }
+    );
+
+    it(
+      "keeps Guardrails explicit when regression and Guardrail conflicts coexist",
+      () => {
+        const blockedCase =
+          cases.find(
+            (item) =>
+              item.id ===
+              "S15_BLOCKED_BOTH"
+          );
+
+        if (!blockedCase) {
+          throw new Error(
+            "Combined blocker guidance case is missing."
+          );
+        }
+
+        const built =
+          blockedCase.build();
+
+        const result = derive(
+          built.workspace,
+          built.overrides
+        );
+
+        expect(result.prompt).toContain(
+          "Preserve every non-negotiable Guardrail."
+        );
+      }
+    );
   }
 );

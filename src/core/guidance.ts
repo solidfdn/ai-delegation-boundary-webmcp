@@ -212,6 +212,53 @@ function conflictingBoundaryTarget(
   };
 }
 
+function regressionRepairPrompt(
+  revision: DelegationRevision,
+  preserveGuardrails: boolean
+): string {
+  const failures =
+    revision.review?.regressions.filter(
+      (result) =>
+        !result.passed
+    ) ?? [];
+
+  const expectedOutcomes = [
+    ...new Set(
+      failures.map(
+        (result) =>
+          result.expectedOutcome
+      )
+    )
+  ];
+
+  const outcomeInstruction =
+    failures.length === 1 &&
+    expectedOutcomes.length === 1
+      ? `the failed scenario remains ${expectedOutcomes[0]}`
+      : "each failed scenario retains its recorded outcome";
+
+  const removesAgentAuthority =
+    failures.some(
+      (result) =>
+        result.actualOutcome ===
+          "AGENT_ONLY" &&
+        result.expectedOutcome !==
+          "AGENT_ONLY"
+    );
+
+  const authorityInstruction =
+    removesAgentAuthority
+      ? " If the existing factors cannot safely distinguish the failed scenario, you are authorized to remove the conflicting agent-only rule."
+      : " Make the smallest boundary change that preserves the recorded outcome.";
+
+  const guardrailInstruction =
+    preserveGuardrails
+      ? " Preserve every non-negotiable Guardrail."
+      : "";
+
+  return `Human decision: Preserve the recorded Human Decision. Adjust the conflicting boundary so ${outcomeInstruction}.${authorityInstruction}${guardrailInstruction} Continue with the available site tools until the next human judgment is required.`;
+}
+
 export function deriveGuidanceState(
   input: GuidanceInput
 ): GuidanceState {
@@ -547,6 +594,13 @@ export function deriveGuidanceState(
         detail:
           "The current boundary conflicts with both a non-negotiable Guardrail and a prior Human Decision.",
         where: conflict.where,
+        prompt:
+          regressionRepairPrompt(
+            current,
+            true
+          ),
+        returnWhen:
+          "Return here when ChatGPT asks for the next Human Decision.",
         goLabel:
           conflict.goLabel,
         targetId:
@@ -589,6 +643,13 @@ export function deriveGuidanceState(
         detail:
           "The current boundary conflicts with a Human Decision preserved from an earlier challenge.",
         where: conflict.where,
+        prompt:
+          regressionRepairPrompt(
+            current,
+            false
+          ),
+        returnWhen:
+          "Return here when ChatGPT asks for the next Human Decision.",
         goLabel:
           conflict.goLabel,
         targetId:

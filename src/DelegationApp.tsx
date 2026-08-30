@@ -697,15 +697,32 @@ export default function DelegationApp() {
       lastAgentError
     });
 
+  const inlineBoundaryPromptTargetId =
+    nextCue.prompt &&
+    (
+      nextCue.id ===
+        "S14_BLOCKED_REGRESSION" ||
+      nextCue.id ===
+        "S15_BLOCKED_BOTH"
+    ) &&
+    nextCue.targetId.startsWith(
+      "boundary-rule-"
+    )
+      ? nextCue.targetId
+      : null;
+
   /*
    * The WHERE target and the in-page attention pointer share
-   * one source of truth. Copy-ready ChatGPT handoffs intentionally
-   * have no in-page pointer because the destination is external.
+   * one source of truth. Most copy-ready ChatGPT handoffs have no
+   * in-page pointer because the destination is external. A blocked
+   * boundary repair is the exception: its prompt is intentionally
+   * embedded inside the exact conflicting rule.
    */
   const pageGuidanceTargetId =
-    nextCue.prompt
+    inlineBoundaryPromptTargetId ??
+    (nextCue.prompt
       ? null
-      : nextCue.targetId;
+      : nextCue.targetId);
 
   const isGuidanceTarget = (
     targetId: string
@@ -1395,7 +1412,8 @@ export default function DelegationApp() {
           </div>
         )}
 
-        {nextCue.prompt && (
+        {nextCue.prompt &&
+          !inlineBoundaryPromptTargetId && (
           <div className="adb-guidance-prompt">
             <label htmlFor="adb-guidance-prompt">
               SEND TO CHATGPT
@@ -1790,6 +1808,50 @@ export default function DelegationApp() {
                       }
                     )}
                   </div>
+
+                  {inlineBoundaryPromptTargetId ===
+                    `boundary-rule-${rule.id}` &&
+                    nextCue.prompt && (
+                    <div className="adb-guidance-prompt adb-rule-guidance-prompt">
+                      <label htmlFor="adb-rule-guidance-prompt">
+                        HUMAN DECISION → CHATGPT
+                      </label>
+
+                      <strong>
+                        Send the recorded decision to continue safely
+                      </strong>
+
+                      <textarea
+                        id="adb-rule-guidance-prompt"
+                        ref={guidancePromptRef}
+                        readOnly
+                        rows={6}
+                        value={nextCue.prompt}
+                        onFocus={(event) =>
+                          event.currentTarget
+                            .select()
+                        }
+                      />
+
+                      <div className="adb-guidance-copy-row">
+                        <button
+                          type="button"
+                          onClick={
+                            copyGuidancePrompt
+                          }
+                        >
+                          Copy for ChatGPT
+                        </button>
+
+                        <span
+                          role="status"
+                          aria-live="polite"
+                        >
+                          {copyFeedback}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </article>
               ))}
           </div>

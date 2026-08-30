@@ -3334,6 +3334,23 @@ strong {
   line-height: 1.55;
 }
 
+.adb-rule-guidance-prompt {
+  margin-top: 16px;
+  padding: 14px;
+
+  border-left:
+    3px solid var(--action-blue);
+
+  background:
+    var(--guide-soft, #eef4fb);
+}
+
+.adb-rule-guidance-prompt > strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .adb-guidance-prompt textarea:focus,
 .adb-guidance-copy-row button:focus-visible,
 .adb-next-cue-action:focus-visible,
