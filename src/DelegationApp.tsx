@@ -27,6 +27,11 @@ import type {
 } from "./core/types";
 
 import {
+  deriveGuidanceState,
+  type ApplyToolState
+} from "./core/guidance";
+
+import {
   createInteractiveDelegationWorkspace
 } from "./domains/interactive-delegation-workspace";
 
@@ -191,6 +196,77 @@ function cloneWorkspace():
   return createInteractiveDelegationWorkspace();
 }
 
+
+const WORKSPACE_SESSION_KEY =
+  "ai-delegation-boundary:workspace:v1";
+
+function loadWorkspaceSession(): {
+  workspace: DelegationWorkspace;
+  restored: boolean;
+} {
+  if (
+    typeof window === "undefined"
+  ) {
+    return {
+      workspace: cloneWorkspace(),
+      restored: false
+    };
+  }
+
+  try {
+    const stored =
+      window.sessionStorage.getItem(
+        WORKSPACE_SESSION_KEY
+      );
+
+    if (!stored) {
+      return {
+        workspace: cloneWorkspace(),
+        restored: false
+      };
+    }
+
+    const parsed =
+      JSON.parse(stored) as
+        DelegationWorkspace;
+
+    const valid =
+      parsed &&
+      typeof parsed === "object" &&
+      typeof parsed.id === "string" &&
+      parsed.task &&
+      Array.isArray(parsed.factors) &&
+      Array.isArray(parsed.revisions) &&
+      typeof parsed.currentRevisionId ===
+        "string" &&
+      parsed.revisions.some(
+        (revision) =>
+          revision.id ===
+          parsed.currentRevisionId
+      );
+
+    if (!valid) {
+      throw new Error(
+        "Stored workspace is invalid."
+      );
+    }
+
+    return {
+      workspace: parsed,
+      restored: true
+    };
+  } catch {
+    window.sessionStorage.removeItem(
+      WORKSPACE_SESSION_KEY
+    );
+
+    return {
+      workspace: cloneWorkspace(),
+      restored: false
+    };
+  }
+}
+
 function operatorLabel(
   operator: DecisionCondition["operator"]
 ) {
@@ -258,24 +334,64 @@ function factorOptions(
 }
 
 export default function DelegationApp() {
+  const initialSession =
+    useRef(
+      loadWorkspaceSession()
+    ).current;
+
   const [lang, setLang] =
     useState<Lang>("en");
 
   const [workspace, setWorkspace] =
     useState<DelegationWorkspace>(
-      cloneWorkspace
+      initialSession.workspace
     );
 
-  const [baseToolCount, setBaseToolCount] =
-    useState(0);
+  const [
+    baseToolCount,
+    setBaseToolCount
+  ] = useState(0);
+
+  const [
+    baseToolsResolved,
+    setBaseToolsResolved
+  ] = useState(false);
 
   const [
     applyToolAvailable,
     setApplyToolAvailable
   ] = useState(false);
 
+  const [
+    applyToolState,
+    setApplyToolState
+  ] = useState<ApplyToolState>(
+    "idle"
+  );
+
+  const [
+    lastAgentError,
+    setLastAgentError
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    copyFeedback,
+    setCopyFeedback
+  ] = useState("");
+
+  const guidancePromptRef =
+    useRef<HTMLTextAreaElement>(
+      null
+    );
+
   const [message, setMessage] =
-    useState<string | null>(null);
+    useState<string | null>(
+      initialSession.restored
+        ? "Session restored after reload."
+        : null
+    );
 
   const [
     taskTitleDraft,
@@ -297,6 +413,20 @@ export default function DelegationApp() {
   workspaceRef.current =
     workspace;
 
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(
+        WORKSPACE_SESSION_KEY,
+        JSON.stringify(workspace)
+      );
+    } catch {
+      /*
+       * Storage failure must never block the Human workspace.
+       * The user can continue in-memory.
+       */
+    }
+  }, [workspace]);
+
   const updateWorkspace =
     useCallback(
       (
@@ -311,23 +441,121 @@ export default function DelegationApp() {
       []
     );
 
+  const recordToolResult =
+    useCallback(
+      <T,>(result: T): T => {
+        if (
+          result &&
+          typeof result === "object" &&
+          "status" in result
+        ) {
+          const record =
+            result as {
+              status?: unknown;
+              message?: unknown;
+            };
+
+          if (
+            record.status === "error" ||
+            record.status === "blocked"
+          ) {
+            setLastAgentError(
+              typeof record.message ===
+                "string"
+                ? record.message
+                : "The Agent tool could not complete."
+            );
+          } else {
+            setLastAgentError(null);
+          }
+        } else {
+          setLastAgentError(null);
+        }
+
+        return result;
+      },
+      []
+    );
+
   const toolActions =
     useMemo(
-      () =>
-        createDelegationBoundaryToolActions(
-          () =>
-            workspaceRef.current,
+      () => {
+        const actions =
+          createDelegationBoundaryToolActions(
+            () =>
+              workspaceRef.current,
 
-          updateWorkspace
-        ),
-      [updateWorkspace]
+            updateWorkspace
+          );
+
+        return {
+          inspectWorkspace: () =>
+            recordToolResult(
+              actions.inspectWorkspace()
+            ),
+
+          proposeBoundaryRevision: (
+            input:
+              Parameters<
+                typeof actions
+                  .proposeBoundaryRevision
+              >[0]
+          ) =>
+            recordToolResult(
+              actions
+                .proposeBoundaryRevision(
+                  input
+                )
+            ),
+
+          addChallenge: (
+            input:
+              Parameters<
+                typeof actions.addChallenge
+              >[0]
+          ) =>
+            recordToolResult(
+              actions.addChallenge(
+                input
+              )
+            ),
+
+          reviewCurrentRevision: () =>
+            recordToolResult(
+              actions
+                .reviewCurrentRevision()
+            ),
+
+          inspectRevisionHistory: () =>
+            recordToolResult(
+              actions
+                .inspectRevisionHistory()
+            ),
+
+          applyApprovedRevision:
+            async () =>
+              recordToolResult(
+                await actions
+                  .applyApprovedRevision()
+              )
+        };
+      },
+      [
+        recordToolResult,
+        updateWorkspace
+      ]
     );
 
   useEffect(() => {
+    setBaseToolsResolved(false);
+
     return (
       registerDelegationBoundaryTools(
         toolActions,
-        setBaseToolCount
+        (count) => {
+          setBaseToolCount(count);
+          setBaseToolsResolved(true);
+        }
       )
     );
   }, [toolActions]);
@@ -350,13 +578,35 @@ export default function DelegationApp() {
         false
       );
 
+      setApplyToolState(
+        "idle"
+      );
+
       return;
     }
+
+    setApplyToolAvailable(
+      false
+    );
+
+    setApplyToolState(
+      "registering"
+    );
 
     return (
       registerApplyApprovedRevisionTool(
         toolActions,
-        setApplyToolAvailable
+        (available) => {
+          setApplyToolAvailable(
+            available
+          );
+
+          setApplyToolState(
+            available
+              ? "available"
+              : "failed"
+          );
+        }
       )
     );
   }, [
@@ -418,105 +668,59 @@ export default function DelegationApp() {
             ? "完了"
             : "PASSED";
 
-  const nextCue = (() => {
-    if (!taskConfigured) {
-      return {
-        key: "scope",
-        owner: "NEXT · HUMAN",
-        action: "Start with this work",
-        detail:
-          "Define the work before the Agent can change authority.",
-        targetId: "next-task"
-      };
-    }
+  const nextCue =
+    deriveGuidanceState({
+      workspace,
+      baseToolCount,
+      baseToolsResolved,
+      applyToolState,
+      lastAgentError
+    });
 
-    if (current.status === "APPLIED") {
-      return {
-        key: "complete",
-        owner: "COMPLETE",
-        action:
-          `Revision ${current.version} applied`,
-        detail:
-          "The exact human-approved revision is now active.",
-        targetId: "next-complete"
-      };
-    }
+  const copyGuidancePrompt =
+    async () => {
+      if (!nextCue.prompt) {
+        return;
+      }
 
-    if (current.status === "APPROVED") {
-      return {
-        key: "apply",
-        owner: "NEXT · AGENT",
-        action:
-          "Ask Agent: apply_approved_revision",
-        detail:
-          "Human approval unlocked the sixth WebMCP capability.",
-        targetId: "next-agent"
-      };
-    }
+      setCopyFeedback("");
 
-    if (
-      current.status ===
-      "READY_FOR_DECISION"
-    ) {
-      return {
-        key: "approve",
-        owner: "NEXT · HUMAN",
-        action:
-          `Approve revision ${current.version}`,
-        detail:
-          "Checks are complete. This exact revision requires human approval.",
-        targetId: "next-approve"
-      };
-    }
+      try {
+        await navigator.clipboard
+          .writeText(
+            nextCue.prompt
+          );
 
-    if (current.status === "BLOCKED") {
-      return {
-        key: "boundary",
-        owner: "NEXT · HUMAN",
-        action:
-          "Adjust the highlighted boundary condition",
-        detail:
-          "The current authority conflicts with a Guardrail or Known Decision.",
-        targetId: "next-boundary"
-      };
-    }
+        setCopyFeedback(
+          "Copied"
+        );
+      } catch {
+        const target =
+          guidancePromptRef.current;
 
-    if (openChallenges.length > 0) {
-      return {
-        key: "decision",
-        owner: "NEXT · HUMAN",
-        action:
-          "Choose one Human Decision outcome",
-        detail:
-          "Allow agent-only · Keep human review · Do not delegate",
-        targetId: "next-challenge"
-      };
-    }
+        if (!target) {
+          setCopyFeedback(
+            "Select and copy the text above."
+          );
 
-    if (
-      current.challenges.length === 0
-    ) {
-      return {
-        key: "agent",
-        owner: "NEXT · AGENT",
-        action:
-          "Ask Agent to propose & challenge",
-        detail:
-          "Change one rule, then challenge that exact new boundary.",
-        targetId: "next-agent"
-      };
-    }
+          return;
+        }
 
-    return {
-      key: "review",
-      owner: "NEXT · HUMAN",
-      action:
-        "Run guardrail & regression checks",
-      detail:
-        "Re-check the exact revision before human approval.",
-      targetId: "next-review"
+        target.focus();
+        target.select();
+
+        const copied =
+          document.execCommand(
+            "copy"
+          );
+
+        setCopyFeedback(
+          copied
+            ? "Copied"
+            : "Selected — press Ctrl+C."
+        );
+      }
     };
-  })();
 
   const showNextStep = () => {
     const target =
@@ -837,14 +1041,36 @@ export default function DelegationApp() {
   };
 
   const reset = () => {
-    updateWorkspace(
-      cloneWorkspace()
+    const hasWork =
+      workspace.task.title
+        .trim()
+        .length > 0;
+
+    if (
+      hasWork &&
+      !window.confirm(
+        "Start new work? The current session-local workspace will be cleared."
+      )
+    ) {
+      return;
+    }
+
+    window.sessionStorage.removeItem(
+      WORKSPACE_SESSION_KEY
     );
+
+    const next =
+      cloneWorkspace();
+
+    updateWorkspace(next);
 
     setTaskTitleDraft("");
     setTaskContextDraft("");
+    setLastAgentError(null);
+    setCopyFeedback("");
     setMessage(null);
   };
+
 
   return (
     <div
@@ -867,13 +1093,14 @@ export default function DelegationApp() {
         </div>
 
         <button
+          id="next-start-new"
           className="adb-reset"
           type="button"
           onClick={reset}
         >
           {lang === "ja"
-            ? "リセット"
-            : "Reset"}
+            ? "新しい業務"
+            : "Start new work"}
         </button>
 
         <div className="adb-lang">
@@ -1032,28 +1259,88 @@ export default function DelegationApp() {
       </section>
 
       <div
-        className="adb-next-cue"
+        className={`adb-next-cue adb-guidance-${nextCue.mode.toLowerCase()}`}
         aria-live="polite"
+        data-guidance-state={
+          nextCue.id
+        }
       >
-        <span
-          className="adb-next-cue-dot"
-          aria-hidden="true"
-        />
+        <div className="adb-next-cue-main">
+          <span
+            className="adb-next-cue-dot"
+            aria-hidden="true"
+          />
 
-        <span className="adb-next-cue-owner">
-          {nextCue.owner}
-        </span>
+          <span className="adb-next-cue-owner">
+            {nextCue.owner}
+          </span>
 
-        <strong>
-          {nextCue.action}
-        </strong>
+          <strong>
+            {nextCue.action}
+          </strong>
 
-        <small>
-          {nextCue.detail}
-        </small>
+          <small>
+            {nextCue.detail}
+          </small>
+        </div>
 
-        {nextCue.key !==
-          "complete" &&
+        {nextCue.where && (
+          <div className="adb-guidance-meta">
+            <span>WHERE</span>
+            <strong>
+              {nextCue.where}
+            </strong>
+          </div>
+        )}
+
+        {nextCue.prompt && (
+          <div className="adb-guidance-prompt">
+            <label htmlFor="adb-guidance-prompt">
+              SEND TO CHATGPT
+            </label>
+
+            <textarea
+              id="adb-guidance-prompt"
+              ref={guidancePromptRef}
+              readOnly
+              rows={3}
+              value={nextCue.prompt}
+              onFocus={(event) =>
+                event.currentTarget
+                  .select()
+              }
+            />
+
+            <div className="adb-guidance-copy-row">
+              <button
+                type="button"
+                onClick={
+                  copyGuidancePrompt
+                }
+              >
+                Copy for ChatGPT
+              </button>
+
+              <span
+                role="status"
+                aria-live="polite"
+              >
+                {copyFeedback}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {nextCue.returnWhen && (
+          <div className="adb-guidance-return">
+            <span>RETURN WHEN</span>
+            <p>
+              {nextCue.returnWhen}
+            </p>
+          </div>
+        )}
+
+        {nextCue.mode === "HUMAN" &&
           nextTargetOffscreen && (
           <button
             className="adb-next-cue-action"
@@ -1688,11 +1975,11 @@ export default function DelegationApp() {
                 </p>
 
                 {taskConfigured && (
-                  <code className="adb-agent-prompt">
+                  <p className="adb-agent-guidance-note">
                     {lang === "ja"
-                      ? "このWorkspaceを確認し、この業務に適した委任条件の変更案を1つ提案してください。その後、その正確な新しいBoundaryが危険になる具体例をChallengeとして提示し、Reviewしてください。"
-                      : "Inspect this workspace. Propose one sensible delegation-boundary change for this work. Then challenge that exact new boundary with a concrete scenario before reviewing it."}
-                  </code>
+                      ? "次にChatGPTが必要な場合は、上部のNext Actionにコピー可能な文面が表示されます。"
+                      : "When ChatGPT is needed, the Next Action above provides one copy-ready handoff prompt."}
+                  </p>
                 )}
               </div>
             ) : (
@@ -1874,26 +2161,13 @@ export default function DelegationApp() {
                 </span>
 
                 <strong>
-                  v{
-                    current.version
-                  }
+                  v{current.version}
                 </strong>
-
-                <code>
-                  {workspace
-                    .approval
-                    ?.fingerprint
-                    .slice(
-                      0,
-                      16
-                    )}
-                  …
-                </code>
 
                 <p>
                   {lang === "ja"
-                    ? "このFingerprintと一致するRevisionだけをAgentが反映できます。"
-                    : "The agent can apply only the revision that still matches this fingerprint."}
+                    ? "この正確なRevisionだけが人によって承認されています。"
+                    : "This exact revision is human-approved. Only the current approved state can be applied."}
                 </p>
               </div>
             )}
@@ -1939,7 +2213,7 @@ export default function DelegationApp() {
               <small>
                 {lang === "ja"
                   ? "過去を消さず、現在だけを更新"
-                  : "History stays immutable"}
+                  : "Past revisions stay available"}
               </small>
             </div>
           </div>
@@ -2025,27 +2299,37 @@ export default function DelegationApp() {
                 </span>
 
                 <strong>
-                  {baseToolCount > 0
-                    ? "WebMCP available"
-                    : "WebMCP not detected"}
+                  {!baseToolsResolved
+                    ? "Checking WebMCP"
+                    : baseToolCount >= 5
+                      ? "WebMCP available"
+                      : baseToolCount > 0
+                        ? "WebMCP degraded"
+                        : "WebMCP not detected"}
                 </strong>
               </div>
 
               <span
                 className={
-                  baseToolCount > 0
+                  baseToolsResolved &&
+                  baseToolCount >= 5
                     ? "live"
                     : "offline"
                 }
               >
-                {baseToolCount > 0
-                  ? `${baseToolCount + (applyToolAvailable ? 1 : 0)} TOOLS`
-                  : "HUMAN ONLY"}
+                {!baseToolsResolved
+                  ? "CHECKING"
+                  : baseToolCount === 0
+                    ? "HUMAN ONLY"
+                    : baseToolCount < 5
+                      ? `${baseToolCount} / 5 TOOLS`
+                      : `${baseToolCount + (applyToolAvailable ? 1 : 0)} TOOLS`}
               </span>
             </div>
 
             <div className="adb-runtime-copy">
-              {baseToolCount > 0 ? (
+              {baseToolsResolved &&
+              baseToolCount >= 5 ? (
                 <>
                   <strong className="adb-runtime-primary">
                     Use with ChatGPT
@@ -2054,14 +2338,11 @@ export default function DelegationApp() {
                   <div className="adb-runtime-map">
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        TRY
+                        NEXT
                       </span>
 
                       <p>
-                        Open this page in the ChatGPT desktop app’s built-in browser and ask:
-                        <code>
-                          Inspect this workspace.
-                        </code>
+                        Follow the Next Action above. It shows one copy-ready ChatGPT handoff only when the Agent is needed.
                       </p>
                     </div>
 
@@ -2089,20 +2370,21 @@ export default function DelegationApp() {
               ) : (
                 <>
                   <strong className="adb-runtime-primary">
-                    Human workspace available
+                    {!baseToolsResolved
+                      ? "Checking site tools"
+                      : baseToolCount > 0
+                        ? "WebMCP setup incomplete"
+                        : "Human workspace available"}
                   </strong>
 
                   <div className="adb-runtime-map adb-runtime-setup">
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        TRY
+                        SETUP
                       </span>
 
                       <p>
-                        Open this page in the ChatGPT desktop app’s built-in browser and ask:
-                        <code>
-                          Inspect this workspace.
-                        </code>
+                        Open this page in the ChatGPT desktop app’s built-in browser. Start Agent work only after all 5 normal tools are available.
                       </p>
                     </div>
 
@@ -2112,7 +2394,7 @@ export default function DelegationApp() {
                       </span>
 
                       <p>
-                        Human review and boundary editing still work in this browser.
+                        Human review and boundary editing remain available in this browser.
                       </p>
                     </div>
 

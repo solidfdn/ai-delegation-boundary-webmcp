@@ -3200,3 +3200,202 @@ strong {
   background: var(--lime-whisper);
   color: var(--ink);
 }
+/* ==========================================================
+   HANDOFF_UX_V1
+   State-aware Human ↔ ChatGPT handoff.
+   One next action. One quiet visual cue.
+   ========================================================== */
+
+.adb-next-cue {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  gap: 12px 24px;
+  align-items: start;
+}
+
+.adb-next-cue-main {
+  display: grid;
+  grid-template-columns:
+    auto auto minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.adb-next-cue-main > small {
+  grid-column: 3;
+  line-height: 1.55;
+}
+
+.adb-guidance-meta,
+.adb-guidance-return {
+  display: grid;
+  grid-template-columns:
+    86px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+
+  grid-column: 1 / -1;
+
+  padding-top: 9px;
+  border-top:
+    1px solid var(--line);
+}
+
+.adb-guidance-meta > span,
+.adb-guidance-return > span,
+.adb-guidance-prompt > label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .11em;
+}
+
+.adb-guidance-meta > strong {
+  font-size: 11px;
+}
+
+.adb-guidance-return p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.adb-guidance-prompt {
+  display: grid;
+  gap: 8px;
+
+  grid-column: 1 / -1;
+
+  padding: 12px;
+  border:
+    1px solid var(--line);
+  background:
+    var(--hotel-blue-soft, #f4f7f9);
+}
+
+.adb-guidance-prompt textarea {
+  width: 100%;
+  min-height: 68px;
+  resize: vertical;
+
+  padding: 10px 11px;
+
+  border:
+    1px solid var(--line-strong);
+  border-radius: 0;
+
+  background: #ffffff;
+  color: var(--ink);
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.adb-guidance-prompt textarea:focus,
+.adb-guidance-copy-row button:focus-visible,
+.adb-next-cue-action:focus-visible,
+.adb-reset:focus-visible {
+  outline:
+    3px solid
+    rgba(11, 29, 53, .24);
+  outline-offset: 2px;
+}
+
+.adb-guidance-copy-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.adb-guidance-copy-row button {
+  min-height: 44px;
+  padding: 8px 14px;
+
+  border:
+    1px solid var(--ink);
+
+  background: #ffffff;
+  color: var(--ink);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.adb-guidance-copy-row span {
+  min-height: 1.4em;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.adb-guidance-chatgpt {
+  border-left:
+    3px solid var(--hotel-blue, #6f8296);
+}
+
+.adb-guidance-human {
+  border-left:
+    3px solid var(--ink);
+}
+
+.adb-guidance-recovery {
+  border-left:
+    3px solid var(--danger);
+}
+
+.adb-guidance-complete {
+  border-left:
+    3px solid var(--lime);
+}
+
+.adb-agent-guidance-note {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .adb-next-cue {
+    grid-template-columns: 1fr;
+  }
+
+  .adb-next-cue-main {
+    grid-template-columns:
+      auto minmax(0, 1fr);
+  }
+
+  .adb-next-cue-main > strong,
+  .adb-next-cue-main > small {
+    grid-column: 1 / -1;
+  }
+
+  .adb-guidance-meta,
+  .adb-guidance-return {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .adb-guidance-copy-row button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration:
+      .001ms !important;
+    animation-duration:
+      .001ms !important;
+    animation-iteration-count:
+      1 !important;
+  }
+}
