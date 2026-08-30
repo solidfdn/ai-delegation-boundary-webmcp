@@ -3664,3 +3664,169 @@ strong {
  * No pointer is created for ChatGPT handoffs. Those states have
  * a copy-ready prompt and pageGuidanceTargetId is null.
  */
+/* ==========================================================
+   START NEW WORK DIALOG V1
+   Product-owned confirmation instead of browser-native confirm.
+   ========================================================== */
+
+.adb-app .adb-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  background:
+    rgba(11, 29, 53, .34);
+
+  backdrop-filter:
+    blur(2px);
+}
+
+.adb-app .adb-start-new-dialog {
+  width:
+    min(
+      100%,
+      540px
+    );
+
+  border:
+    1px solid
+    var(--line-strong);
+
+  background:
+    var(--hotel-paper, #ffffff);
+
+  box-shadow:
+    0 24px 64px
+    rgba(11, 29, 53, .16);
+
+  padding:
+    28px 30px 26px;
+}
+
+.adb-app .adb-dialog-eyebrow {
+  display: block;
+
+  color:
+    var(--hotel-blue, #6f8296);
+
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: .14em;
+}
+
+.adb-app .adb-start-new-dialog h2 {
+  margin:
+    13px 0 0;
+
+  color:
+    var(--ink);
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.adb-app .adb-start-new-dialog p {
+  margin:
+    14px 0 0;
+
+  color:
+    var(--muted);
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.adb-app .adb-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  margin-top: 26px;
+  padding-top: 18px;
+
+  border-top:
+    1px solid var(--line);
+}
+
+.adb-app .adb-dialog-actions button {
+  min-height: 42px;
+
+  padding:
+    0 16px;
+
+  border:
+    1px solid var(--ink);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.adb-app .adb-dialog-keep {
+  background:
+    #ffffff;
+
+  color:
+    var(--ink);
+}
+
+.adb-app .adb-dialog-start {
+  background:
+    var(--ink);
+
+  color:
+    #ffffff;
+}
+
+.adb-app
+.adb-dialog-actions
+button:hover {
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(11, 29, 53, .14);
+}
+
+.adb-app
+.adb-dialog-actions
+button:focus-visible {
+  outline:
+    3px solid
+    rgba(36, 78, 149, .22);
+
+  outline-offset:
+    2px;
+}
+
+@media (max-width: 520px) {
+  .adb-app .adb-modal-backdrop {
+    align-items: end;
+
+    padding: 14px;
+  }
+
+  .adb-app .adb-start-new-dialog {
+    padding:
+      24px 22px 22px;
+  }
+
+  .adb-app .adb-dialog-actions {
+    flex-direction:
+      column-reverse;
+  }
+
+  .adb-app .adb-dialog-actions button {
+    width: 100%;
+    min-height: 46px;
+  }
+}

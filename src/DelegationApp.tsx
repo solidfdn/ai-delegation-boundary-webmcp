@@ -381,6 +381,26 @@ export default function DelegationApp() {
     setCopyFeedback
   ] = useState("");
 
+  const [
+    startNewDialogOpen,
+    setStartNewDialogOpen
+  ] = useState(false);
+
+  const startNewButtonRef =
+    useRef<HTMLButtonElement>(
+      null
+    );
+
+  const keepCurrentWorkRef =
+    useRef<HTMLButtonElement>(
+      null
+    );
+
+  const confirmStartNewRef =
+    useRef<HTMLButtonElement>(
+      null
+    );
+
   const guidancePromptRef =
     useRef<HTMLTextAreaElement>(
       null
@@ -1056,21 +1076,7 @@ export default function DelegationApp() {
     }
   };
 
-  const reset = () => {
-    const hasWork =
-      workspace.task.title
-        .trim()
-        .length > 0;
-
-    if (
-      hasWork &&
-      !window.confirm(
-        "Start new work? The current session-local workspace will be cleared."
-      )
-    ) {
-      return;
-    }
-
+  const clearCurrentWorkspace = () => {
     window.sessionStorage.removeItem(
       WORKSPACE_SESSION_KEY
     );
@@ -1086,6 +1092,66 @@ export default function DelegationApp() {
     setCopyFeedback("");
     setMessage(null);
   };
+
+  const closeStartNewDialog = () => {
+    setStartNewDialogOpen(
+      false
+    );
+
+    window.requestAnimationFrame(
+      () =>
+        startNewButtonRef
+          .current
+          ?.focus()
+    );
+  };
+
+  const confirmStartNewWork = () => {
+    setStartNewDialogOpen(
+      false
+    );
+
+    clearCurrentWorkspace();
+
+    window.requestAnimationFrame(
+      () =>
+        document
+          .getElementById(
+            "adb-task-title"
+          )
+          ?.focus()
+    );
+  };
+
+  const requestStartNewWork = () => {
+    const hasWork =
+      workspace.task.title
+        .trim()
+        .length > 0;
+
+    if (!hasWork) {
+      clearCurrentWorkspace();
+      return;
+    }
+
+    setStartNewDialogOpen(
+      true
+    );
+  };
+
+  useEffect(() => {
+    if (
+      !startNewDialogOpen
+    ) {
+      return;
+    }
+
+    keepCurrentWorkRef
+      .current
+      ?.focus();
+  }, [
+    startNewDialogOpen
+  ]);
 
 
   return (
@@ -1110,6 +1176,7 @@ export default function DelegationApp() {
 
         <button
           id="next-start-new"
+          ref={startNewButtonRef}
           className={`adb-reset ${
             isGuidanceTarget(
               "next-start-new"
@@ -1118,7 +1185,9 @@ export default function DelegationApp() {
               : ""
           }`}
           type="button"
-          onClick={reset}
+          onClick={
+            requestStartNewWork
+          }
         >
           {lang === "ja"
             ? "新しい業務"
@@ -2582,6 +2651,107 @@ export default function DelegationApp() {
           Foundations empower challenges.
         </p>
       </footer>
+
+      {startNewDialogOpen && (
+        <div
+          className="adb-modal-backdrop"
+        >
+          <section
+            className="adb-start-new-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="adb-start-new-title"
+            aria-describedby="adb-start-new-description"
+            onKeyDown={(event) => {
+              if (
+                event.key ===
+                "Escape"
+              ) {
+                event.preventDefault();
+                closeStartNewDialog();
+                return;
+              }
+
+              if (
+                event.key !==
+                "Tab"
+              ) {
+                return;
+              }
+
+              const first =
+                keepCurrentWorkRef
+                  .current;
+
+              const last =
+                confirmStartNewRef
+                  .current;
+
+              if (
+                !first ||
+                !last
+              ) {
+                return;
+              }
+
+              if (
+                event.shiftKey &&
+                document.activeElement ===
+                  first
+              ) {
+                event.preventDefault();
+                last.focus();
+                return;
+              }
+
+              if (
+                !event.shiftKey &&
+                document.activeElement ===
+                  last
+              ) {
+                event.preventDefault();
+                first.focus();
+              }
+            }}
+          >
+            <span className="adb-dialog-eyebrow">
+              CURRENT WORKSPACE
+            </span>
+
+            <h2 id="adb-start-new-title">
+              Start new work?
+            </h2>
+
+            <p id="adb-start-new-description">
+              This will clear the current workspace from this browser session, including its revisions, challenges, human decisions, approval, and applied state. Nothing outside this browser session will be changed.
+            </p>
+
+            <div className="adb-dialog-actions">
+              <button
+                ref={keepCurrentWorkRef}
+                className="adb-dialog-keep"
+                type="button"
+                onClick={
+                  closeStartNewDialog
+                }
+              >
+                Keep current work
+              </button>
+
+              <button
+                ref={confirmStartNewRef}
+                className="adb-dialog-start"
+                type="button"
+                onClick={
+                  confirmStartNewWork
+                }
+              >
+                Start new work
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
