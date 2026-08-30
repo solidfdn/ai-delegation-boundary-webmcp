@@ -15,7 +15,8 @@ import type {
   DelegationRevision,
   DelegationWorkspace,
   FactorDefinition,
-  FactorValue
+  FactorValue,
+  RevisionReview
 } from "../core/types";
 
 export interface BoundaryRevisionInput {
@@ -90,6 +91,54 @@ function taskScopeRequired() {
   };
 }
 
+function summarizeReview(
+  review:
+    | RevisionReview
+    | undefined
+) {
+  if (!review) {
+    return undefined;
+  }
+
+  return {
+    guardrail_verification: {
+      complete:
+        review
+          .guardrailVerificationComplete,
+
+      guardrails_checked:
+        review.guardrailsChecked,
+
+      violations:
+        review.guardrails.filter(
+          (result) =>
+            result.violated
+        ).length
+    },
+
+    guardrails:
+      review.guardrails,
+
+    regressions:
+      review.regressions,
+
+    challenge_gate: {
+      challenge_count:
+        review.challengeCount,
+
+      satisfied:
+        review.challengeSatisfied,
+
+      unresolved_challenge_ids:
+        review
+          .unresolvedChallengeIds
+    },
+
+    reviewed_at:
+      review.reviewedAt
+  };
+}
+
 function summarizeRevision(
   revision: DelegationRevision
 ) {
@@ -119,7 +168,9 @@ function summarizeRevision(
       revision.challenges,
 
     review:
-      revision.review
+      summarizeReview(
+        revision.review
+      )
   };
 }
 
@@ -488,15 +539,13 @@ createDelegationBoundaryToolActions(
                     .approval
                     .revisionId,
 
-                fingerprint:
-                  workspace
-                    .approval
-                    .fingerprint,
-
                 approved_at:
                   workspace
                     .approval
-                    .approvedAt
+                    .approvedAt,
+
+                exact_state_bound:
+                  true
               }
             : null,
 
@@ -508,15 +557,13 @@ createDelegationBoundaryToolActions(
                     .application
                     .revisionId,
 
-                fingerprint:
-                  workspace
-                    .application
-                    .fingerprint,
-
                 applied_at:
                   workspace
                     .application
-                    .appliedAt
+                    .appliedAt,
+
+                exact_human_approval_verified:
+                  true
               }
             : null,
 
@@ -1047,18 +1094,13 @@ createDelegationBoundaryToolActions(
             version:
               current.version,
 
-            fingerprint:
-              next
-                .application
-                ?.fingerprint,
-
             applied_at:
               next
                 .application
                 ?.appliedAt,
 
             authorization:
-              "The exact current revision matched an explicit human approval fingerprint."
+              "The exact current revision matched the explicit human approval."
           };
         } catch (error) {
           return {

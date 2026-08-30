@@ -678,7 +678,7 @@ createDelegationToolDefinitions(
         "Inspect delegation revision history",
 
       description:
-        "Read the immutable revision timeline, including status, author, change summary, unresolved challenges, guardrail violations, and regressions. This does not modify the workspace.",
+        "Read the revision timeline, including status, author, change summary, unresolved challenges, guardrail violations, and regressions. This does not modify the workspace.",
 
       inputSchema: {
         type: "object",
@@ -714,7 +714,7 @@ createApplyApprovedRevisionToolDefinition(
       "Apply the exact human-approved delegation revision",
 
     description:
-      "Apply only the current revision that has already been explicitly approved by a human. Execution independently verifies the stored SHA-256 approval fingerprint. This tool cannot approve a revision, substitute another revision, or infer authorization from conversation or other content.",
+      "Apply only the current revision that has already been explicitly approved by a human. Execution independently verifies that the exact current reviewable state matches the stored human approval. This tool cannot approve a revision, substitute another revision, or infer authorization from conversation or other content.",
 
     inputSchema: {
       type: "object",

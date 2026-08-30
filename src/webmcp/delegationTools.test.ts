@@ -176,6 +176,124 @@ describe(
     );
 
     it(
+      "keeps implementation-only verification counts and fingerprints out of Agent-facing WebMCP output",
+      async () => {
+        const harness =
+          createHarness();
+
+        harness.workspace =
+          resolveChallengesAndReview(
+            harness.workspace
+          );
+
+        const internalReview =
+          getCurrentRevision(
+            harness.workspace
+          ).review;
+
+        expect(
+          internalReview
+            ?.guardrailStatesChecked
+        ).toBeGreaterThan(0);
+
+        const inspectTool =
+          createDelegationToolDefinitions(
+            harness.actions
+          ).find(
+            (candidate) =>
+              candidate.name ===
+              "inspect_delegation_workspace"
+          )!;
+
+        const inspectResult =
+          await inspectTool.execute(
+            {}
+          );
+
+        const inspectJson =
+          JSON.stringify(
+            inspectResult
+          );
+
+        expect(
+          inspectJson
+        ).not.toContain(
+          "guardrailStatesChecked"
+        );
+
+        expect(
+          inspectJson
+        ).not.toContain(
+          "\"fingerprint\""
+        );
+
+        expect(
+          inspectJson
+        ).not.toContain(
+          "243"
+        );
+
+        harness.workspace =
+          await approveCurrentRevision(
+            harness.workspace,
+            "2026-08-29T13:00:00.000Z"
+          );
+
+        const approvedInspect =
+          await inspectTool.execute(
+            {}
+          );
+
+        expect(
+          JSON.stringify(
+            approvedInspect
+          )
+        ).not.toContain(
+          "\"fingerprint\""
+        );
+
+        const applyTool =
+          createApplyApprovedRevisionToolDefinition(
+            harness.actions
+          );
+
+        expect(
+          applyTool.description
+        ).not.toContain(
+          "SHA-256"
+        );
+
+        const applyResult =
+          await applyTool.execute(
+            {}
+          );
+
+        const applyJson =
+          JSON.stringify(
+            applyResult
+          );
+
+        expect(
+          applyJson
+        ).not.toContain(
+          "\"fingerprint\""
+        );
+
+        expect(
+          applyJson
+        ).not.toContain(
+          "SHA-256"
+        );
+
+        expect(
+          applyJson
+        ).toContain(
+          "exact current revision"
+        );
+      }
+    );
+
+    it(
       "lets the agent create a candidate revision without changing protected guardrails or known decisions",
       async () => {
         const harness =
