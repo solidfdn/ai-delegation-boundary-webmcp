@@ -6,6 +6,12 @@ AI Delegation Boundary helps people decide where agent autonomy should end and h
 
 **Live app:** https://solidfdn.github.io/decision-patch-webmcp/
 
+## Product view
+
+![AI Delegation Boundary workspace showing task scope, Guardrails, review state, revision history, and WebMCP availability](docs/images/delegation-boundary-workspace.png)
+
+*The initial workspace keeps task scope, review evidence, revision history, and WebMCP availability visible in one decision surface.*
+
 ## The problem
 
 As AI agents become capable of completing real work, capability is no longer the only question.
@@ -49,6 +55,12 @@ Both paths end in the same terminal state: `APPLIED`. The page automatically scr
 
 - **Primary:** Approve -> Apply revision N and complete -> Completion Report
 - **Optional WebMCP:** Approve -> explicitly authorize ChatGPT -> Agent invokes `apply_approved_revision` -> Completion Report
+
+### Optional WebMCP completion
+
+![ChatGPT applying an exact human-approved revision beside the terminal Completion Report](docs/images/webmcp-completion-report.png)
+
+*The optional WebMCP path shown beside the terminal Completion Report. The primary in-page Apply action reaches the same `APPLIED` state without ChatGPT.*
 
 ## Trust model
 
