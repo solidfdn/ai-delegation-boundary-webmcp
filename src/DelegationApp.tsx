@@ -1353,12 +1353,16 @@ export default function DelegationApp() {
             </span>
           </button>
         )}
+
+        {message && (
+          <div
+            className="adb-message"
+            role="status"
+          >
+            {message}
+          </div>
+        )}
       </div>
-      {message && (
-        <div className="adb-message">
-          {message}
-        </div>
-      )}
 
       <main className="adb-workspace">
         <section className="adb-column adb-boundary-column">

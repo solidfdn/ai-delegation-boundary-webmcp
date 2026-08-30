@@ -3399,3 +3399,98 @@ strong {
       1 !important;
   }
 }
+/* ==========================================================
+   NEXT ACTION ALIGNMENT V2
+   One shared reading axis for WHO / ACTION and WHERE / TARGET.
+   ========================================================== */
+
+.adb-app .adb-next-cue-main {
+  grid-template-columns:
+    7px 94px minmax(0, 1fr);
+
+  column-gap: 12px;
+}
+
+/*
+ * NEXT · HUMAN and WHERE share the same left edge.
+ * Start with this work and the exact destination share the
+ * same content edge.
+ */
+.adb-app .adb-next-cue-owner {
+  font-size: 9.5px;
+}
+
+.adb-app .adb-guidance-meta {
+  grid-template-columns:
+    94px minmax(0, 1fr);
+
+  gap: 12px;
+
+  padding-left: 19px;
+}
+
+.adb-app .adb-guidance-meta > span {
+  color: var(--guide);
+
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+
+.adb-app .adb-guidance-meta > strong {
+  color: #244E95;
+
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/*
+ * Status acknowledgements belong to the current guidance
+ * surface. They should never look like another workflow step.
+ */
+.adb-app .adb-next-cue .adb-message {
+  grid-column: 1 / -1;
+
+  margin:
+    0 0 0 125px;
+
+  padding: 1px 0 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--faint);
+
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .adb-app .adb-next-cue-main {
+    grid-template-columns:
+      7px minmax(0, 1fr);
+  }
+
+  .adb-app .adb-next-cue-owner {
+    grid-column: 2;
+  }
+
+  .adb-app .adb-next-cue-main > strong,
+  .adb-app .adb-next-cue-main > small {
+    grid-column: 2;
+  }
+
+  .adb-app .adb-guidance-meta {
+    grid-template-columns: 1fr;
+
+    gap: 4px;
+
+    padding-left: 19px;
+  }
+
+  .adb-app .adb-next-cue .adb-message {
+    margin-left: 19px;
+  }
+}
