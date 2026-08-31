@@ -6,6 +6,12 @@ AI Delegation Boundary helps people decide where agent autonomy should end and h
 
 **Live app:** https://solidfdn.github.io/ai-delegation-boundary-webmcp/
 
+## Judge & User Guide
+
+**New to the project?** Start with the [AI Delegation Boundary User Guide (PDF)](docs/AI_Delegation_Boundary_User_Guide_EN_v1.1.pdf).
+
+A concise, screen-led walkthrough for judges and first-time users, covering the Human + Agent workflow, Agent Challenges, Known Decisions, exact human approval, the conditional sixth WebMCP tool, and the terminal Completion Report.
+
 ## Product view
 
 ![AI Delegation Boundary workspace showing task scope, Guardrails, review state, revision history, and WebMCP availability](docs/images/delegation-boundary-workspace.png)
