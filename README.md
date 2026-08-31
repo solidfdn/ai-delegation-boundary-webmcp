@@ -12,10 +12,6 @@ AI Delegation Boundary helps people decide where agent autonomy should end and h
 
 A concise, screen-led walkthrough for judges and first-time users, covering the Human + Agent workflow, Agent Challenges, Known Decisions, exact human approval, the conditional sixth WebMCP tool, and the terminal Completion Report.
 
-**Reviewing the technical design?** Continue with the [Technical Briefing Deck (PDF)](docs/AI_Delegation_Boundary_Technical_Briefing_Deck_EN_v1.0.pdf).
-
-An 11-page technical overview of the architecture, five normal WebMCP tools and the conditional sixth tool, Challenge Gate, Known Decisions, exact human approval, deployment verification, and current hardening boundaries.
-
 ## Product view
 
 ![AI Delegation Boundary workspace showing task scope, Guardrails, review state, revision history, and WebMCP availability](docs/images/delegation-boundary-workspace.png)
@@ -81,6 +77,12 @@ flowchart TB
 ```
 
 A static browser application owns delegation state and human authority. A compatible Agent can call only the tools currently registered by the page. Exact human approval exposes the sixth apply capability; both direct and optional Agent application pass through the same coordinator, which revalidates the revision ID and SHA-256 fingerprint before committing `APPLIED`.
+
+## Technical Briefing
+
+- [AI Delegation Boundary Technical Briefing (PDF)](docs/AI_Delegation_Boundary_Technical_Briefing_Deck_EN_v1.0.pdf)
+
+An 11-page technical overview of the architecture, five normal WebMCP tools and the conditional sixth tool, Challenge Gate, Known Decisions, exact human approval, deployment verification, and current hardening boundaries.
 
 ## Human + Agent workflow
 
