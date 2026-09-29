@@ -8,6 +8,14 @@ AI Delegation Boundary helps people decide where agent autonomy should end and h
 
 ## Judge & User Guide
 
+### Japanese interface / 日本語表示
+
+Use the **EN / 日本語** control in the header. The application also accepts `?lang=ja` or `?lang=en`; an explicit URL choice takes precedence over the saved language preference. English remains the default when no preference is stored.
+
+日本語の操作手順と注意事項は[日本語版クイックガイド](docs/JAPANESE.md)をご覧ください。表示言語の切替は、業務内容・判断・承認・反映の状態を変更しません。
+
+The UI, next-action guidance, copyable ChatGPT instructions, and Completion Report are localized. User-entered and Agent-authored content is preserved rather than silently translated. WebMCP tool names, schemas, status codes, and approval fingerprints remain unchanged. Existing English PDFs and screenshots remain English.
+
 **New to the project?** Start with the [AI Delegation Boundary User Guide (PDF)](docs/AI_Delegation_Boundary_User_Guide_EN_v1.1.pdf).
 
 A concise, screen-led walkthrough for judges and first-time users, covering the Human + Agent workflow, Agent Challenges, Known Decisions, exact human approval, the conditional sixth WebMCP tool, and the terminal Completion Report.

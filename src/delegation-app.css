@@ -1808,9 +1808,28 @@ select:focus-visible {
   }
 }
 
-/* CHALLENGE SUBMISSION: ENGLISH-ONLY UI */
-.adb-lang {
-  display: none;
+/* Language is a view preference; both versions share the same workspace. */
+.adb-ja .adb-challenge-actions::before {
+  content: "人の判断が必要です · 1つ選んでください";
+}
+.adb-lang { display: flex; flex-shrink: 0; }
+.adb-ja { font-family: "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif; }
+.adb-ja .adb-hero-title { line-height: 1.45; overflow-wrap: anywhere; }
+.adb-ja .adb-next-cue-owner,
+.adb-ja .adb-card-label { letter-spacing: .06em; }
+.adb-ja .adb-guidance-prompt textarea { line-height: 1.75; }
+.adb-ja .adb-runtime-row { grid-template-columns: minmax(72px, .35fr) minmax(0, 1fr); }
+.adb-lang button:focus-visible { outline: 2px solid #244e95; outline-offset: 3px; }
+.adb-lang button:hover,
+.adb-lang button.active { background: #244e95; color: #fff; }
+
+@media (max-width: 540px) {
+  .adb-header { grid-template-columns: minmax(0, 1fr) auto; }
+  .adb-header .adb-brand { grid-column: 1; grid-row: 1; }
+  .adb-header .adb-product { grid-column: 1 / -1; grid-row: 2; }
+  .adb-header .adb-reset { grid-column: 1; grid-row: 3; }
+  .adb-header .adb-lang { grid-column: 2; grid-row: 1; }
+  .adb-ja .adb-hero-title { font-size: clamp(26px, 7vw, 38px); }
 }
 
  /* HUMAN DECISION PANEL */

@@ -1,3 +1,4 @@
+import { localizeGuidance } from "../i18n/delegation";
 import {
   describe,
   expect,
@@ -218,7 +219,7 @@ function derive(
   overrides:
     InputOverrides = {}
 ) {
-  return deriveGuidanceState({
+  const input = {
     workspace: value,
     baseToolCount:
       overrides.baseToolCount ??
@@ -235,7 +236,21 @@ function derive(
 
     lastAgentError:
       overrides.lastAgentError
-  });
+  };
+  const snapshot = JSON.stringify(value);
+  const result = deriveGuidanceState(input);
+  const localized = localizeGuidance(result, input, "ja");
+  expect(localized.id).toBe(result.id);
+  expect(localized.mode).toBe(result.mode);
+  expect(localized.targetId).toBe(result.targetId);
+  expect(localized.action).toMatch(/[一-龯ぁ-んァ-ン]/);
+  expect(localized.detail).not.toBe("");
+  expect(Boolean(localized.prompt)).toBe(Boolean(result.prompt));
+  expect(Boolean(localized.prompt?.includes("削除を許可"))).toBe(
+    Boolean(result.prompt?.includes("authorized to remove"))
+  );
+  expect(JSON.stringify(value)).toBe(snapshot);
+  return result;
 }
 
 type Case = {

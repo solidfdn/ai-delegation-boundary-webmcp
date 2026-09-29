@@ -1,4 +1,8 @@
 import {
+  initialLanguage, LANGUAGE_KEY, translate, errorText,
+  localizeGuidance, approvedPromptJa
+} from "./i18n/delegation";
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -67,8 +71,8 @@ const STATUS_LABELS = {
   ja: {
     DRAFT: "検討中",
     NEEDS_REVIEW: "人の判断待ち",
-    BLOCKED: "変更不可",
-    READY_FOR_DECISION: "最終判断可能",
+    BLOCKED: "修正が必要",
+    READY_FOR_DECISION: "承認可能",
     APPROVED: "人が承認済み",
     APPLIED: "反映済み",
     SUPERSEDED: "過去版"
@@ -150,18 +154,6 @@ const VALUE_JA:
       "未経験"
   };
 
-const RULE_JA:
-  Record<string, string> = {
-    "rule-irreversible":
-      "取り消せない処理はAIに任せない",
-
-    "rule-unknown-policy":
-      "ルールが不明なら人が確認する",
-
-    "rule-agent-standard":
-      "条件を満たす通常判断はAIだけで完了できる"
-  };
-
 const GUARDRAIL_JA:
   Record<string, {
     label: string;
@@ -182,18 +174,6 @@ const GUARDRAIL_JA:
       description:
         "既存ルールで判断できないものを、AIだけで完了させません。"
     }
-  };
-
-const KNOWN_JA:
-  Record<string, string> = {
-    "known-001":
-      "明確・低影響の通常判断",
-
-    "known-002":
-      "影響が中程度なら人が確認",
-
-    "known-003":
-      "取り消せない判断はAIに任せない"
   };
 
 function cloneWorkspace():
@@ -345,7 +325,13 @@ export default function DelegationApp() {
     ).current;
 
   const [lang, setLang] =
-    useState<Lang>("en");
+    useState<Lang>(initialLanguage);
+
+  const t = (text: string) => translate(text, lang);
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    try { localStorage.setItem(LANGUAGE_KEY, lang); } catch { /* preference only */ }
+  }, [lang]);
 
   const [workspace, setWorkspace] =
     useState<DelegationWorkspace>(
@@ -787,23 +773,23 @@ export default function DelegationApp() {
             ? "完了"
             : "PASSED";
 
-  const nextCue =
-    deriveGuidanceState({
-      workspace,
-      baseToolCount,
-      baseToolsResolved,
-      applyToolState,
-      lastAgentError
-    });
+  const guidanceInput = {
+    workspace,
+    baseToolCount,
+    baseToolsResolved,
+    applyToolState,
+    lastAgentError
+  };
+  const nextCue = localizeGuidance(
+    deriveGuidanceState(guidanceInput), guidanceInput, lang
+  );
 
   const approvalAgentPrompt =
     current.status ===
       "APPROVED" &&
     applyToolState ===
       "available"
-      ? approvedApplyChatGPTPrompt(
-          current.version
-        )
+      ? (lang === "ja" ? approvedPromptJa(current.version) : approvedApplyChatGPTPrompt(current.version))
       : null;
 
   const inlineBoundaryPromptTargetId =
@@ -1146,7 +1132,7 @@ export default function DelegationApp() {
     } catch (error) {
       setMessage(
         error instanceof Error
-          ? error.message
+          ? errorText(error.message, lang)
           : String(error)
       );
     }
@@ -1165,13 +1151,13 @@ export default function DelegationApp() {
 
       setMessage(
         lang === "ja"
-          ? "この正確なRevisionを承認しました。下の基本操作から直接反映できます。WebMCP経由の反映は任意です。"
+          ? "この版そのものを承認しました。下の基本操作から直接反映できます。WebMCP経由の反映は任意です。"
           : "This exact revision is human-approved. Apply it directly below to complete. The WebMCP route is optional."
       );
     } catch (error) {
       setMessage(
         error instanceof Error
-          ? error.message
+          ? errorText(error.message, lang)
           : String(error)
       );
     }
@@ -1199,13 +1185,13 @@ export default function DelegationApp() {
 
         setMessage(
           lang === "ja"
-            ? `承認済みRevision ${getCurrentRevision(applied).version} を反映しました。`
+            ? `承認済みの版 ${getCurrentRevision(applied).version} を反映しました。`
             : `Approved revision ${getCurrentRevision(applied).version} was applied from the human workspace.`
         );
       } catch (error) {
         setMessage(
           error instanceof Error
-            ? error.message
+            ? errorText(error.message, lang)
             : String(error)
         );
       } finally {
@@ -1240,13 +1226,13 @@ export default function DelegationApp() {
 
       setMessage(
         lang === "ja"
-          ? "この判断を記録しました。次のRevisionではRegression Testとして使われます。"
+          ? "この判断を記録しました。次のRevisionでは回帰テストとして使われます。"
           : "The human judgment was recorded. It is now a regression test for future revisions."
       );
     } catch (error) {
       setMessage(
         error instanceof Error
-          ? error.message
+          ? errorText(error.message, lang)
           : String(error)
       );
     }
@@ -1273,7 +1259,7 @@ export default function DelegationApp() {
     } catch (error) {
       setMessage(
         error instanceof Error
-          ? error.message
+          ? errorText(error.message, lang)
           : String(error)
       );
     }
@@ -1302,7 +1288,7 @@ export default function DelegationApp() {
     } catch (error) {
       setMessage(
         error instanceof Error
-          ? error.message
+          ? errorText(error.message, lang)
           : String(error)
       );
     }
@@ -1403,7 +1389,7 @@ export default function DelegationApp() {
         </div>
 
         <div className="adb-header-tagline">
-          A pull request for agent authority.
+          {t("A pull request for agent authority.")}
         </div>
 
         <button
@@ -1426,7 +1412,7 @@ export default function DelegationApp() {
             : "Start new work"}
         </button>
 
-        <div className="adb-lang">
+        <div className="adb-lang" role="group" aria-label={lang === "ja" ? "表示言語" : "Display language"}>
           <button
             type="button"
             className={
@@ -1434,6 +1420,8 @@ export default function DelegationApp() {
                 ? "active"
                 : ""
             }
+            aria-pressed={lang === "en"}
+            lang="en"
             onClick={() =>
               setLang("en")
             }
@@ -1450,6 +1438,8 @@ export default function DelegationApp() {
                 ? "active"
                 : ""
             }
+            aria-pressed={lang === "ja"}
+            lang="ja"
             onClick={() =>
               setLang("ja")
             }
@@ -1467,7 +1457,7 @@ export default function DelegationApp() {
 
           <h1 className="adb-hero-title">
             {lang === "ja" ? (
-              "AIに任せてよい範囲を検討する。"
+              "AIに任せる範囲を、人が決める。"
             ) : (
               <>
                 <span className="adb-hero-title-line">
@@ -1482,7 +1472,7 @@ export default function DelegationApp() {
 
           <p>
             {lang === "ja"
-              ? "人が検討する業務と最終判断を持ちます。Agentは委任条件の変更を提案し、その変更が危険になる具体例を探し、Revisionごとに再検証します。反映できるのは、人が承認した正確な版だけです。"
+              ? "人が業務と委任条件を決め、最終的な権限を持ちます。AIは条件の変更を提案し、問題が起きる具体例を検討して、変更のたびに再検証します。反映できるのは、人が承認した版そのものだけです。"
               : "A human defines the work and retains final authority. The Agent proposes boundary changes, tries to break them with concrete challenges, and re-tests each revision. Only the exact human-approved revision can be applied."}
           </p>
         </div>
@@ -1545,7 +1535,7 @@ export default function DelegationApp() {
         }
       >
         <div className="adb-protocol-step">
-          <span>01 · HUMAN</span>
+          <span>{lang === "ja" ? "01 · 人" : "01 · HUMAN"}</span>
           <strong>
             {lang === "ja"
               ? "業務を定める"
@@ -1554,7 +1544,7 @@ export default function DelegationApp() {
         </div>
 
         <div className="adb-protocol-step">
-          <span>02 · AGENT</span>
+          <span>{lang === "ja" ? "02 · AI" : "02 · AGENT"}</span>
           <strong>
             {lang === "ja"
               ? "変更案を出し、疑う"
@@ -1563,7 +1553,7 @@ export default function DelegationApp() {
         </div>
 
         <div className="adb-protocol-step">
-          <span>03 · HUMAN</span>
+          <span>{lang === "ja" ? "03 · 人" : "03 · HUMAN"}</span>
           <strong>
             {lang === "ja"
               ? "境界を判断する"
@@ -1572,7 +1562,7 @@ export default function DelegationApp() {
         </div>
 
         <div className="adb-protocol-step">
-          <span>04 · HUMAN</span>
+          <span>{lang === "ja" ? "04 · 人" : "04 · HUMAN"}</span>
           <strong>
             {lang === "ja"
               ? "承認された版だけ反映"
@@ -1649,7 +1639,7 @@ export default function DelegationApp() {
               <div>
                 <dt>
                   {lang === "ja"
-                    ? "反映済みRevision"
+                    ? "反映済みの版"
                     : "Applied revision"}
                 </dt>
                 <dd>
@@ -1660,7 +1650,7 @@ export default function DelegationApp() {
               <div>
                 <dt>
                   {lang === "ja"
-                    ? "Guardrail違反"
+                    ? "必須制約の違反"
                     : "Guardrail violations"}
                 </dt>
                 <dd>
@@ -1687,7 +1677,7 @@ export default function DelegationApp() {
               <div>
                 <dt>
                   {lang === "ja"
-                    ? "解決済みChallenge"
+                    ? "回答済みの検討課題"
                     : "Challenges resolved"}
                 </dt>
                 <dd>
@@ -1733,7 +1723,7 @@ export default function DelegationApp() {
           current.status !==
             "APPLIED" && (
           <div className="adb-guidance-meta">
-            <span>WHERE</span>
+            <span>{t("WHERE")}</span>
             <strong>
               {nextCue.where}
             </strong>
@@ -1743,9 +1733,9 @@ export default function DelegationApp() {
               <span
                 className="adb-session-restored"
                 role="status"
-                aria-label="Session restored after reload."
+                aria-label={t("Session restored after reload.")}
               >
-                SESSION RESTORED
+                {t("SESSION RESTORED")}
               </span>
             )}
           </div>
@@ -1755,7 +1745,7 @@ export default function DelegationApp() {
           !inlinePromptTargetId && (
           <div className="adb-guidance-prompt">
             <label htmlFor="adb-guidance-prompt">
-              SEND TO CHATGPT
+              {t("SEND TO CHATGPT")}
             </label>
 
             <textarea
@@ -1777,14 +1767,14 @@ export default function DelegationApp() {
                   copyGuidancePrompt
                 }
               >
-                Copy for ChatGPT
+                {t("Copy for ChatGPT")}
               </button>
 
               <span
                 role="status"
                 aria-live="polite"
               >
-                {copyFeedback}
+                {t(copyFeedback)}
               </span>
             </div>
           </div>
@@ -1792,7 +1782,7 @@ export default function DelegationApp() {
 
         {nextCue.returnWhen && (
           <div className="adb-guidance-return">
-            <span>RETURN WHEN</span>
+            <span>{t("RETURN WHEN")}</span>
             <p>
               {nextCue.returnWhen}
             </p>
@@ -1820,7 +1810,7 @@ export default function DelegationApp() {
             className="adb-message"
             role="status"
           >
-            {message}
+            {t(message)}
           </div>
         )}
       </div>
@@ -1960,7 +1950,7 @@ export default function DelegationApp() {
 
                 <div className="adb-task-locked-note">
                   {lang === "ja"
-                    ? "このWorkspaceでは検討対象を固定しています。別の業務を検討する場合は、上部の「新しい業務」から開始します。"
+                    ? "この作業スペースでは検討対象を固定しています。別の業務を検討する場合は、上部の「新しい業務」から開始します。"
                     : "Task scope is fixed for this workspace. Use Start new work in the header to evaluate a different task."}
                 </div>
               </>
@@ -1976,7 +1966,7 @@ export default function DelegationApp() {
 
             <p>
               {lang === "ja"
-                ? "条件を満たす低影響・可逆・通常の判断だけをAIに任せます。それ以外は人の確認を残します。"
+                ? t(current.boundary.label)
                 : current.boundary.label}
             </p>
           </div>
@@ -2011,12 +2001,7 @@ export default function DelegationApp() {
                 >
                   <div className="adb-rule-head">
                     <strong>
-                      {lang === "ja"
-                        ? RULE_JA[
-                            rule.id
-                          ] ??
-                          rule.label
-                        : rule.label}
+                      {t(rule.label)}
                     </strong>
 
                     <span
@@ -2153,11 +2138,11 @@ export default function DelegationApp() {
                     nextCue.prompt && (
                     <div className="adb-guidance-prompt adb-rule-guidance-prompt">
                       <label htmlFor="adb-rule-guidance-prompt">
-                        HUMAN DECISION → CHATGPT
+                        {t("HUMAN DECISION → CHATGPT")}
                       </label>
 
                       <strong>
-                        Send the recorded decision to continue safely
+                        {t("Send the recorded decision to continue safely")}
                       </strong>
 
                       <textarea
@@ -2179,14 +2164,14 @@ export default function DelegationApp() {
                             copyGuidancePrompt
                           }
                         >
-                          Copy for ChatGPT
+                          {t("Copy for ChatGPT")}
                         </button>
 
                         <span
                           role="status"
                           aria-live="polite"
                         >
-                          {copyFeedback}
+                          {t(copyFeedback)}
                         </span>
                       </div>
                     </div>
@@ -2239,7 +2224,7 @@ export default function DelegationApp() {
             <div>
               <span>
                 {lang === "ja"
-                  ? "Guardrail違反"
+                  ? "必須制約の違反"
                   : "Guardrail violations"}
               </span>
 
@@ -2265,7 +2250,7 @@ export default function DelegationApp() {
             <div>
               <span>
                 {lang === "ja"
-                  ? "Challenge Gate"
+                  ? "課題の検討状況"
                   : "Challenge gate"}
               </span>
 
@@ -2288,12 +2273,12 @@ export default function DelegationApp() {
             <div className="adb-block-head">
               <div>
                 <span className="adb-card-label">
-                  GUARDRAILS
+                  {t("GUARDRAILS")}
                 </span>
 
                 <strong>
                   {lang === "ja"
-                    ? "越えてはいけない条件"
+                    ? "必ず守る制約"
                     : "Non-negotiable boundaries"}
                 </strong>
               </div>
@@ -2358,7 +2343,7 @@ export default function DelegationApp() {
             <div className="adb-block-head">
               <div>
                 <span className="adb-card-label">
-                  KNOWN DECISIONS
+                  {t("KNOWN DECISIONS")}
                 </span>
 
                 <strong>
@@ -2388,7 +2373,7 @@ export default function DelegationApp() {
 
                 <p>
                   {lang === "ja"
-                    ? "Agent Challengeに人が答えると、その判断が次の変更を守るRegression Testとして残ります。"
+                    ? "AIの検討課題に人が答えると、その判断が次の変更を守る回帰テストとして残ります。"
                     : "When a human answers an Agent Challenge, that judgment becomes a regression test for future boundary changes."}
                 </p>
               </div>
@@ -2408,13 +2393,7 @@ export default function DelegationApp() {
                   >
                     <div>
                       <strong>
-                        {lang ===
-                          "ja"
-                          ? KNOWN_JA[
-                              decision.id
-                            ] ??
-                            "人が確定した判断"
-                          : decision.label}
+                        {decision.label}
                       </strong>
 
                       <div className="adb-facts">
@@ -2469,12 +2448,12 @@ export default function DelegationApp() {
             <div className="adb-block-head">
               <div>
                 <span className="adb-card-label">
-                  AGENT CHALLENGES
+                  {t("AGENT CHALLENGES")}
                 </span>
 
                 <strong>
                   {lang === "ja"
-                    ? "この変更を疑う論点"
+                    ? "AIが提示した検討課題"
                     : "Questions that challenge the boundary"}
                 </strong>
               </div>
@@ -2497,17 +2476,17 @@ export default function DelegationApp() {
                       ? "まず、検討する業務を人が定めます。"
                       : "First, a human must scope the work."
                     : lang === "ja"
-                      ? "Agent Challengeが必要です。"
+                      ? "AIの検討課題が必要です。"
                       : "Agent Challenge required."}
                 </strong>
 
                 <p>
                   {!taskConfigured
                     ? lang === "ja"
-                      ? "業務が決まるまで、Agentによる委任条件の変更・Challenge・Reviewはロックされています。"
+                      ? "業務を設定するまで、AIによる委任条件の変更・課題の提示・検証は利用できません。"
                       : "Until the work is scoped, Agent tools that change, challenge, or review authority are locked."
                     : lang === "ja"
-                      ? "このRevisionにはまだAgent Challengeがありません。Challengeが0件のRevisionは承認可能な状態にはなりません。"
+                      ? "この版にはまだAIの検討課題がありません。課題が0件の版は承認可能な状態にはなりません。"
                       : "This revision has no Agent Challenge yet. A revision with zero challenges cannot become approval-ready."}
                 </p>
 
@@ -2550,7 +2529,7 @@ export default function DelegationApp() {
                       <div className="adb-challenge-head">
                         <span>
                           {
-                            challenge.status
+                            t(challenge.status)
                           }
                         </span>
 
@@ -2648,7 +2627,7 @@ export default function DelegationApp() {
                         <div className="adb-resolution">
                           {lang ===
                           "ja"
-                            ? "人が判断済み。この判断は次回以降のRegression Testになります。"
+                            ? "人が判断済み。この判断は次回以降の回帰テストになります。"
                             : "Human resolved. This judgment now protects future revisions as a regression test."}
                         </div>
                       )}
@@ -2681,7 +2660,7 @@ export default function DelegationApp() {
                   }
                 >
                   {lang === "ja"
-                    ? "Guardrailと過去判断を再確認"
+                    ? "必須制約と過去の判断を再検証"
                     : "Run guardrail & regression checks"}
                 </button>
               )}
@@ -2703,7 +2682,7 @@ export default function DelegationApp() {
                 }
               >
                 {lang === "ja"
-                  ? `Revision ${current.version} を承認`
+                  ? `第${current.version}版 を承認`
                   : `Approve revision ${current.version}`}
               </button>
             )}
@@ -2726,7 +2705,7 @@ export default function DelegationApp() {
 
                 <p>
                   {lang === "ja"
-                    ? "この正確なRevisionだけが人によって承認されています。"
+                    ? "この版そのものだけが人によって承認されています。"
                     : "This exact revision is human-approved. Only the current approved state can be applied."}
                 </p>
 
@@ -2748,13 +2727,13 @@ export default function DelegationApp() {
 
                   <strong>
                     {lang === "ja"
-                      ? `承認済みRevision ${current.version} を反映`
+                      ? `承認済みの版 ${current.version} を反映`
                       : `Apply approved revision ${current.version}`}
                   </strong>
 
                   <p>
                     {lang === "ja"
-                      ? "適用直前にRevision IDと承認時のfingerprintを再検証します。ChatGPTへの貼り付けは不要です。"
+                      ? "適用直前に版のIDと承認時のフィンガープリント（内容の照合値）を再検証します。ChatGPTへの貼り付けは不要です。"
                       : "Revision ID and the human-approved fingerprint are verified again immediately before application. No ChatGPT handoff is required."}
                   </p>
 
@@ -2772,7 +2751,7 @@ export default function DelegationApp() {
                         ? "承認内容を検証中…"
                         : "Verifying approval…"
                       : lang === "ja"
-                        ? `Revision ${current.version} を反映して完了`
+                        ? `第${current.version}版 を反映して完了`
                         : `Apply revision ${current.version} and complete`}
                   </button>
                 </div>
@@ -2780,7 +2759,7 @@ export default function DelegationApp() {
                 <div className="adb-approved-agent-option">
                   <div className="adb-approved-agent-head">
                     <span>
-                      OPTIONAL · WEBMCP
+                      {t("OPTIONAL · WEBMCP")}
                     </span>
 
                     <strong>
@@ -2793,7 +2772,7 @@ export default function DelegationApp() {
                       {applyToolState ===
                       "available"
                         ? lang === "ja"
-                          ? "同じ承認済みRevisionを、WebMCP経由でAgentに反映させる場合に使用します。"
+                          ? "同じ承認済みの版を、WebMCP経由でAgentに反映させる場合に使用します。"
                           : "Use this optional route to let the Agent apply the same approved revision through WebMCP."
                         : applyToolState ===
                             "failed"
@@ -2809,7 +2788,7 @@ export default function DelegationApp() {
                   {approvalAgentPrompt && (
                     <div className="adb-guidance-prompt adb-approval-guidance-prompt">
                       <label htmlFor="adb-approval-guidance-prompt">
-                        SEND TO CURRENT CHATGPT CONVERSATION
+                        {t("SEND TO CURRENT CHATGPT CONVERSATION")}
                       </label>
 
                       <strong>
@@ -2837,14 +2816,14 @@ export default function DelegationApp() {
                             copyApprovalPrompt
                           }
                         >
-                          Copy instruction for ChatGPT
+                          {t("Copy instruction for ChatGPT")}
                         </button>
 
                         <span
                           role="status"
                           aria-live="polite"
                         >
-                          {copyFeedback}
+                          {t(copyFeedback)}
                         </span>
                       </div>
                     </div>
@@ -2866,7 +2845,7 @@ export default function DelegationApp() {
                 }`}
               >
                 <span>
-                  APPLIED
+                  {t("APPLIED")}
                 </span>
 
                 <strong>
@@ -2966,15 +2945,13 @@ export default function DelegationApp() {
 
                       <p>
                         {
-                          revision
-                            .changeSummary
+                          t(revision.changeSummary)
                         }
                       </p>
 
                       <small>
                         {
-                          revision
-                            .createdBy
+                          t(revision.createdBy)
                         }
                         {index === 0
                           ? lang ===
@@ -3007,12 +2984,12 @@ export default function DelegationApp() {
 
                 <strong>
                   {!baseToolsResolved
-                    ? "Checking WebMCP"
+                    ? t("Checking WebMCP")
                     : baseToolCount >= 5
-                      ? "WebMCP available"
+                      ? t("WebMCP available")
                       : baseToolCount > 0
-                        ? "WebMCP degraded"
-                        : "WebMCP not detected"}
+                        ? t("WebMCP degraded")
+                        : t("WebMCP not detected")}
                 </strong>
               </div>
 
@@ -3025,12 +3002,12 @@ export default function DelegationApp() {
                 }
               >
                 {!baseToolsResolved
-                  ? "CHECKING"
+                  ? t("CHECKING")
                   : baseToolCount === 0
-                    ? "HUMAN ONLY"
+                    ? t("HUMAN ONLY")
                     : baseToolCount < 5
-                      ? `${baseToolCount} / 5 TOOLS`
-                      : `${baseToolCount + (applyToolAvailable ? 1 : 0)} TOOLS`}
+                      ? (lang === "ja" ? `${baseToolCount} / 5 ツール` : `${baseToolCount} / 5 TOOLS`)
+                      : (lang === "ja" ? `${baseToolCount + (applyToolAvailable ? 1 : 0)} ツール` : `${baseToolCount + (applyToolAvailable ? 1 : 0)} TOOLS`)}
               </span>
             </div>
 
@@ -3039,37 +3016,37 @@ export default function DelegationApp() {
               baseToolCount >= 5 ? (
                 <>
                   <strong className="adb-runtime-primary">
-                    Site tools ready
+                    {t("Site tools ready")}
                   </strong>
 
                   <div className="adb-runtime-map">
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        SITE TOOLS
+                        {t("SITE TOOLS")}
                       </span>
 
                       <p>
-                        Five normal WebMCP tools are registered by this page. Human Approval can expose one additional apply capability.
+                        {t("Five normal WebMCP tools are registered by this page. Human Approval can expose one additional apply capability.")}
                       </p>
                     </div>
 
                     <div className="adb-runtime-row adb-runtime-agent-row">
                       <span>
-                        AGENT
+                        {t("AGENT")}
                       </span>
 
                       <p>
-                        A compatible Agent client calls the WebMCP tools exposed by this page. No AI backend.
+                        {t("A compatible Agent client calls the WebMCP tools exposed by this page. No AI backend.")}
                       </p>
                     </div>
 
                     <div className="adb-runtime-row adb-runtime-authority-row">
                       <span>
-                        AUTHORITY
+                        {t("AUTHORITY")}
                       </span>
 
                       <p>
-                        The web app owns the boundary, Guardrails, human judgments, approval, and applied state.
+                        {t("The web app owns the boundary, Guardrails, human judgments, approval, and applied state.")}
                       </p>
                     </div>
                   </div>
@@ -3078,44 +3055,44 @@ export default function DelegationApp() {
                 <>
                   <strong className="adb-runtime-primary">
                     {!baseToolsResolved
-                      ? "Checking site tools"
+                      ? t("Checking site tools")
                       : baseToolCount > 0
-                        ? "WebMCP setup incomplete"
-                        : "Human workspace available"}
+                        ? t("WebMCP setup incomplete")
+                        : t("Human workspace available")}
                   </strong>
 
                   <div className="adb-runtime-map adb-runtime-setup">
                     <div className="adb-runtime-row adb-runtime-try-row">
                       <span>
-                        SITE TOOLS
+                        {t("SITE TOOLS")}
                       </span>
 
                       <p>
                         {!baseToolsResolved
-                          ? "Registration is still in progress."
+                          ? t("Registration is still in progress.")
                           : baseToolCount > 0
-                            ? `${baseToolCount} of 5 normal WebMCP tools are registered. Agent work remains unavailable until all 5 are ready.`
-                            : "No WebMCP site tools are available in this browser."}
+                            ? (lang === "ja" ? `通常の5ツールのうち${baseToolCount}ツールが登録済みです。すべて揃うまでAIへの依頼は利用できません。` : `${baseToolCount} of 5 normal WebMCP tools are registered. Agent work remains unavailable until all 5 are ready.`)
+                            : t("No WebMCP site tools are available in this browser.")}
                       </p>
                     </div>
 
                     <div className="adb-runtime-row adb-runtime-authority-row">
                       <span>
-                        WORKSPACE
+                        {t("WORKSPACE")}
                       </span>
 
                       <p>
-                        Human review and boundary editing remain available in this browser.
+                        {t("Human review and boundary editing remain available in this browser.")}
                       </p>
                     </div>
 
                     <div className="adb-runtime-row adb-runtime-backend-row">
                       <span>
-                        BACKEND
+                        {t("BACKEND")}
                       </span>
 
                       <p>
-                        No AI backend required.
+                        {t("No AI backend required.")}
                       </p>
                     </div>
                   </div>
@@ -3173,7 +3150,7 @@ export default function DelegationApp() {
 
       <footer className="adb-footer">
         <p>
-          Foundations empower challenges.
+          {t("Foundations empower challenges.")}
         </p>
       </footer>
 
@@ -3240,15 +3217,15 @@ export default function DelegationApp() {
             }}
           >
             <span className="adb-dialog-eyebrow">
-              CURRENT WORKSPACE
+              {t("CURRENT WORKSPACE")}
             </span>
 
             <h2 id="adb-start-new-title">
-              Start new work?
+              {t("Start new work?")}
             </h2>
 
             <p id="adb-start-new-description">
-              This will clear the current workspace from this browser session, including its revisions, challenges, human decisions, approval, and applied state. Nothing outside this browser session will be changed.
+              {t("This will clear the current workspace from this browser session, including its revisions, challenges, human decisions, approval, and applied state. Nothing outside this browser session will be changed.")}
             </p>
 
             <div className="adb-dialog-actions">
@@ -3260,7 +3237,7 @@ export default function DelegationApp() {
                   closeStartNewDialog
                 }
               >
-                Keep current work
+                {t("Keep current work")}
               </button>
 
               <button
@@ -3271,7 +3248,7 @@ export default function DelegationApp() {
                   confirmStartNewWork
                 }
               >
-                Start new work
+                {t("Start new work")}
               </button>
             </div>
           </section>
