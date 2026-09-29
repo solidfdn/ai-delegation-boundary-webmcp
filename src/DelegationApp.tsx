@@ -1253,7 +1253,7 @@ export default function DelegationApp() {
 
       setMessage(
         lang === "ja"
-          ? "検討する業務を設定しました。ここからAgentが変更案とChallengeを作れます。"
+          ? "検討する業務を設定しました。画面の案内に沿って、ChatGPTへ検討を依頼してください。"
           : "The work is scoped. The Agent can now propose and challenge delegation changes."
       );
     } catch (error) {
@@ -1457,7 +1457,7 @@ export default function DelegationApp() {
 
           <h1 className="adb-hero-title">
             {lang === "ja" ? (
-              "AIに任せる範囲を、人が決める。"
+              "AIに任せる範囲を考慮する。"
             ) : (
               <>
                 <span className="adb-hero-title-line">
@@ -1472,7 +1472,7 @@ export default function DelegationApp() {
 
           <p>
             {lang === "ja"
-              ? "人が業務と委任条件を決め、最終的な権限を持ちます。AIは条件の変更を提案し、問題が起きる具体例を検討して、変更のたびに再検証します。反映できるのは、人が承認した版そのものだけです。"
+              ? "AIは条件を提案し、問題が起きる具体例を検討し、変更がある場合には再検証します。\n最終的な権限と責任は人にあり、AIの提案をもとに業務と委任条件を決定します。\n人が承認した場合だけ、確定事項として反映できます。"
               : "A human defines the work and retains final authority. The Agent proposes boundary changes, tries to break them with concrete challenges, and re-tests each revision. Only the exact human-approved revision can be applied."}
           </p>
         </div>
@@ -1501,14 +1501,14 @@ export default function DelegationApp() {
                 ? "検証は完了しています。最終判断は人が行います。"
                 : current.status ===
                   "BLOCKED"
-                  ? "Guardrailまたは過去の人判断と矛盾しています。"
+                  ? "事前に決めた条件や、過去の判断に合わない点があります。"
                   : current.status ===
                     "APPROVED"
                     ? "この版だけが人によって承認されています。"
                     : current.status ===
                       "APPLIED"
                       ? "承認済みの版が反映されました。"
-                      : "現在の検討状態です。"
+                      : "ステータス"
               : current.status ===
                 "READY_FOR_DECISION"
                 ? "Checks are complete. Final authority remains human."
@@ -1538,7 +1538,7 @@ export default function DelegationApp() {
           <span>{lang === "ja" ? "01 · 人" : "01 · HUMAN"}</span>
           <strong>
             {lang === "ja"
-              ? "業務を定める"
+              ? "検討したい業務の提示"
               : "Scope the work"}
           </strong>
         </div>
@@ -1547,7 +1547,7 @@ export default function DelegationApp() {
           <span>{lang === "ja" ? "02 · AI" : "02 · AGENT"}</span>
           <strong>
             {lang === "ja"
-              ? "変更案を出し、疑う"
+              ? "検討と提案"
               : "Propose & challenge"}
           </strong>
         </div>
@@ -1556,7 +1556,7 @@ export default function DelegationApp() {
           <span>{lang === "ja" ? "03 · 人" : "03 · HUMAN"}</span>
           <strong>
             {lang === "ja"
-              ? "境界を判断する"
+              ? "提案をもとに整理・判断"
               : "Decide the boundary"}
           </strong>
         </div>
@@ -1565,7 +1565,7 @@ export default function DelegationApp() {
           <span>{lang === "ja" ? "04 · 人" : "04 · HUMAN"}</span>
           <strong>
             {lang === "ja"
-              ? "承認された版だけ反映"
+              ? "検討結果の確定"
               : "Apply approved revision"}
           </strong>
         </div>
@@ -1823,13 +1823,13 @@ export default function DelegationApp() {
             <div>
               <strong>
                 {lang === "ja"
-                  ? "現在の委任条件"
+                  ? "検討業務・概要の入力"
                   : "Current boundary"}
               </strong>
 
               <small>
                 {lang === "ja"
-                  ? "AIに任せる条件を確認・調整"
+                  ? "検討したい業務と、その背景を記入してください"
                   : "Review and adjust agent authority"}
               </small>
             </div>
@@ -1922,15 +1922,11 @@ export default function DelegationApp() {
                   }
                 >
                   {lang === "ja"
-                    ? "この業務で検討を開始"
+                    ? "検討を開始"
                     : "Start with this work"}
                 </button>
 
-                <small>
-                  {lang === "ja"
-                    ? "この設定は人だけが行います。業務を定めるまでAgentは委任条件を変更できません。"
-                    : "Human-only step. Until this is set, the Agent cannot change delegation authority."}
-                </small>
+                <>{lang === "en" && <small>Human-only step. Until this is set, the Agent cannot change delegation authority.</small>}</>
               </form>
             ) : (
               <>
@@ -1960,10 +1956,15 @@ export default function DelegationApp() {
           <div className="adb-boundary-summary">
             <span className="adb-card-label">
               {lang === "ja"
-                ? "現在の方針"
+                ? (current.version === 1 ? "検討開始時の仮の条件" : "検討中の条件")
                 : "CURRENT POLICY"}
             </span>
 
+            {lang === "ja" && <p>
+              {current.version === 1
+                ? "以下は、検討を始めるために用意した初期条件です。入力した業務を分析した結果ではありません。業務に合うかをAIと検討します。"
+                : "下の条件は、これまでの検討を反映した内容です。業務に合っているかを確認し、必要に応じて調整してください。"}
+            </p>}
             <p>
               {lang === "ja"
                 ? t(current.boundary.label)
@@ -2208,13 +2209,13 @@ export default function DelegationApp() {
             <div>
               <strong>
                 {lang === "ja"
-                  ? "変更を検証"
+                  ? "提案内容の確認"
                   : "Review the change"}
               </strong>
 
               <small>
                 {lang === "ja"
-                  ? "越えてはいけない条件・過去判断・新しい論点"
+                  ? "提案に問題がないか、これまでの判断と照らして確認します"
                   : "Guardrails, past decisions, and new challenges"}
               </small>
             </div>
@@ -2273,12 +2274,12 @@ export default function DelegationApp() {
             <div className="adb-block-head">
               <div>
                 <span className="adb-card-label">
-                  {t("GUARDRAILS")}
+                  {lang === "ja" ? "検討の前提" : "GUARDRAILS"}
                 </span>
 
                 <strong>
                   {lang === "ja"
-                    ? "必ず守る制約"
+                    ? "AIに任せないこと・人が確認すること"
                     : "Non-negotiable boundaries"}
                 </strong>
               </div>
@@ -2343,12 +2344,12 @@ export default function DelegationApp() {
             <div className="adb-block-head">
               <div>
                 <span className="adb-card-label">
-                  {t("KNOWN DECISIONS")}
+                  {lang === "ja" ? "判断の記録" : "KNOWN DECISIONS"}
                 </span>
 
                 <strong>
                   {lang === "ja"
-                    ? "人が確定した判断"
+                    ? "これまでに決めたこと"
                     : "Human decisions preserved as tests"}
                 </strong>
               </div>
@@ -2367,7 +2368,7 @@ export default function DelegationApp() {
               <div className="adb-known-empty">
                 <strong>
                   {lang === "ja"
-                    ? "まだ人が確定した判断はありません。"
+                    ? "確定した判断はありません"
                     : "No human judgment has been recorded yet."}
                 </strong>
 
@@ -2448,12 +2449,12 @@ export default function DelegationApp() {
             <div className="adb-block-head">
               <div>
                 <span className="adb-card-label">
-                  {t("AGENT CHALLENGES")}
+                  {lang === "ja" ? "AIからの確認事項" : "AGENT CHALLENGES"}
                 </span>
 
                 <strong>
                   {lang === "ja"
-                    ? "AIが提示した検討課題"
+                    ? "判断していただきたいこと"
                     : "Questions that challenge the boundary"}
                 </strong>
               </div>
@@ -2473,7 +2474,7 @@ export default function DelegationApp() {
                 <strong>
                   {!taskConfigured
                     ? lang === "ja"
-                      ? "まず、検討する業務を人が定めます。"
+                      ? "01 検討したい業務を入力してください"
                       : "First, a human must scope the work."
                     : lang === "ja"
                       ? "AIの検討課題が必要です。"
@@ -2483,7 +2484,7 @@ export default function DelegationApp() {
                 <p>
                   {!taskConfigured
                     ? lang === "ja"
-                      ? "業務を設定するまで、AIによる委任条件の変更・課題の提示・検証は利用できません。"
+                      ? "業務を確定すると、AIによる検証と提案機能が利用できます"
                       : "Until the work is scoped, Agent tools that change, challenge, or review authority are locked."
                     : lang === "ja"
                       ? "この版にはまだAIの検討課題がありません。課題が0件の版は承認可能な状態にはなりません。"
@@ -2493,7 +2494,7 @@ export default function DelegationApp() {
                 {taskConfigured && (
                   <p className="adb-agent-guidance-note">
                     {lang === "ja"
-                      ? "必要な次の操作は、上部のNext Actionだけに表示されます。"
+                      ? "次に行う操作は、画面上部の案内をご確認ください。"
                       : "The Next Action above is the single source of workflow guidance."}
                   </p>
                 )}
@@ -2878,7 +2879,7 @@ export default function DelegationApp() {
 
               <small>
                 {lang === "ja"
-                  ? "過去を消さず、現在だけを更新"
+                  ? "進捗を一覧化します"
                   : "Past revisions stay available"}
               </small>
             </div>
@@ -2979,7 +2980,7 @@ export default function DelegationApp() {
             <div className="adb-agent-card-head">
               <div>
                 <span className="adb-card-label">
-                  WEBMCP
+                  {lang === "ja" ? "ChatGPTとの連携" : "WEBMCP"}
                 </span>
 
                 <strong>
@@ -3006,11 +3007,28 @@ export default function DelegationApp() {
                   : baseToolCount === 0
                     ? t("HUMAN ONLY")
                     : baseToolCount < 5
-                      ? (lang === "ja" ? `${baseToolCount} / 5 ツール` : `${baseToolCount} / 5 TOOLS`)
-                      : (lang === "ja" ? `${baseToolCount + (applyToolAvailable ? 1 : 0)} ツール` : `${baseToolCount + (applyToolAvailable ? 1 : 0)} TOOLS`)}
+                      ? (lang === "ja" ? "準備未完了" : `${baseToolCount} / 5 TOOLS`)
+                      : (lang === "ja" ? "接続済み" : `${baseToolCount + (applyToolAvailable ? 1 : 0)} TOOLS`)}
               </span>
             </div>
 
+            {lang === "ja" ? (
+              <div className="adb-runtime-copy">
+                <p>{!baseToolsResolved
+                  ? "ChatGPTからこのページを操作できるか確認しています。"
+                  : baseToolCount >= 5
+                    ? "ChatGPTに、この画面の業務を読み取り、条件の提案や検証を依頼できます。"
+                    : "このブラウザでは、ChatGPTとの連携をまだ利用できません。対応する環境でこのページを開いてください。"}</p>
+                <p>次に行う操作は、画面上部に表示します。ChatGPTへの依頼が必要なときは、コピーして送れる文面も表示します。</p>
+                <p>提案の確認と承認は、この画面で行います。承認後は「反映して完了」のボタンで確定できます。</p>
+                <details className="adb-connection-details">
+                  <summary>連携の仕組み・接続状況</summary>
+                  <p>WebMCPは、ChatGPTがこのページを操作するための仕組みです。検討用の5つの機能に加え、人の承認後に限り、承認した版を反映する機能が使えるようになります。</p>
+                  <p>現在使える機能：{baseToolsResolved ? baseToolCount + (applyToolAvailable ? 1 : 0) : "確認中"}</p>
+                  <p>AIへの依頼はChatGPT側で行います。検討内容と承認・反映の状態は、このブラウザの作業スペースで管理します。</p>
+                </details>
+              </div>
+            ) : (<>
             <div className="adb-runtime-copy">
               {baseToolsResolved &&
               baseToolCount >= 5 ? (
@@ -3071,7 +3089,7 @@ export default function DelegationApp() {
                         {!baseToolsResolved
                           ? t("Registration is still in progress.")
                           : baseToolCount > 0
-                            ? (lang === "ja" ? `通常の5ツールのうち${baseToolCount}ツールが登録済みです。すべて揃うまでAIへの依頼は利用できません。` : `${baseToolCount} of 5 normal WebMCP tools are registered. Agent work remains unavailable until all 5 are ready.`)
+                            ? `${baseToolCount} of 5 normal WebMCP tools are registered. Agent work remains unavailable until all 5 are ready.`
                             : t("No WebMCP site tools are available in this browser.")}
                       </p>
                     </div>
@@ -3102,9 +3120,7 @@ export default function DelegationApp() {
             <div className="adb-capability">
               <div>
                 <span>
-                  {lang === "ja"
-                    ? "通常"
-                    : "NORMAL"}
+                  NORMAL
                 </span>
 
                 <strong>
@@ -3122,9 +3138,7 @@ export default function DelegationApp() {
                 }
               >
                 <span>
-                  {lang === "ja"
-                    ? "人の承認後"
-                    : "AFTER HUMAN APPROVAL"}
+                  AFTER HUMAN APPROVAL
                 </span>
 
                 <strong>
@@ -3132,6 +3146,7 @@ export default function DelegationApp() {
                 </strong>
               </div>
             </div>
+            </>)}
           </div>
 
           <div className="adb-principle">
@@ -3141,7 +3156,7 @@ export default function DelegationApp() {
 
             <strong>
               {lang === "ja"
-                ? "人の判断を、次の変更を守るテストにする。"
+                ? "一度決めたことを、次の検討にも活かします。"
                 : "Every human override becomes a test before it becomes a rule."}
             </strong>
           </div>

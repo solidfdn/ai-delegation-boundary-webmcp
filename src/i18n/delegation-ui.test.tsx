@@ -15,18 +15,25 @@ function render(lang: string, workspace = createInteractiveDelegationWorkspace()
 
 it("renders Japanese setup, language control and next action", () => {
   const html = render("ja");
-  expect(html).toContain("AIに任せる範囲を、人が決める。");
-  expect(html).toContain("検討する業務を設定してください");
-  expect(html).toContain("この業務で検討を開始");
+  expect(html).toContain("AIに任せる範囲を考慮する。");
+  expect(html).toContain("01 検討したい業務を入力してください");
+  expect(html).toContain("検討を開始");
   expect(html).toContain('lang="ja"');
   expect(html).not.toContain("Define the work before any Agent");
+  expect(html).toContain("入力した業務を分析した結果ではありません");
+  expect(html).toContain("検討したい業務の提示");
+  expect(html).toContain("提案をもとに整理・判断");
+  expect(html).toContain("確定した判断はありません");
+  expect(html).toContain("連携の仕組み・接続状況</summary>");
+  expect(html).not.toContain("この設定は人だけが行います");
+  expect(html).not.toContain("人が確定した判断");
 });
 
 it("retains the English experience", () => {
   const html = render("en");
   expect(html).toContain("Decide what an AI agent");
   expect(html).toContain("Start with this work");
-  expect(html).not.toContain("検討する業務を設定してください");
+  expect(html).not.toContain("01 検討したい業務を入力してください");
 });
 
 it("does not replace custom policy, rule or decision labels with stock translations", () => {

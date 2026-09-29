@@ -1818,6 +1818,10 @@ select:focus-visible {
 .adb-ja .adb-next-cue-owner,
 .adb-ja .adb-card-label { letter-spacing: .06em; }
 .adb-ja .adb-guidance-prompt textarea { line-height: 1.75; }
+.adb-ja .adb-hero-copy > p { white-space: pre-line; }
+.adb-connection-details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+.adb-connection-details summary { cursor: pointer; color: #244e95; font-size: 12px; }
+.adb-connection-details p { line-height: 1.8; }
 .adb-ja .adb-runtime-row { grid-template-columns: minmax(72px, .35fr) minmax(0, 1fr); }
 .adb-lang button:focus-visible { outline: 2px solid #244e95; outline-offset: 3px; }
 .adb-lang button:hover,
