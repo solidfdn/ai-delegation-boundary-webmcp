@@ -1,3 +1,4 @@
+import BusinessDiscussion, { FACTOR_HELP } from "./BusinessDiscussion";
 import {
   initialLanguage, LANGUAGE_KEY, translate, errorText,
   localizeGuidance, approvedPromptJa
@@ -111,7 +112,7 @@ const FACTOR_JA:
       "誤判断した場合の影響",
 
     reversibility:
-      "取り消し可能性",
+      "処理を誤ったとき、元に戻せるか",
 
     policy_clarity:
       "ルールの明確さ",
@@ -1953,6 +1954,15 @@ export default function DelegationApp() {
             )}
           </div>
 
+          {lang === "ja" && current.status !== "APPLIED" && <BusinessDiscussion
+            task={taskConfigured ? workspace.task.title : taskTitleDraft}
+            context={taskConfigured ? (workspace.task.description ?? "") : taskContextDraft}
+            configured={taskConfigured}
+          />}
+
+          <details className="adb-business-details" open={lang === "en" || nextCue.targetId === "next-boundary" || nextCue.targetId?.startsWith("boundary-rule-") ? true : undefined}>
+            <summary>{lang === "ja" ? "詳細設定：現在の委任条件を確認・調整する" : "Current boundary settings"}</summary>
+            {lang === "ja" && <p>ここは個別案件の確認結果ではなく、AIに任せるための条件です。業務の手順・資料・システム仕様を確認してから調整してください。「高」「低」などの具体的な基準は、業務ごとに別途定める必要があります。</p>}
           <div className="adb-boundary-summary">
             <span className="adb-card-label">
               {lang === "ja"
@@ -2051,9 +2061,8 @@ export default function DelegationApp() {
                             key={`${rule.id}-${condition.factorId}-${index}`}
                           >
                             <span>
-                              {factorLabel(
-                                condition.factorId
-                              )}
+                              {factorLabel(condition.factorId)}
+                              {lang === "ja" && FACTOR_HELP[condition.factorId] && <small className="adb-factor-help">{FACTOR_HELP[condition.factorId]}</small>}
                             </span>
 
                             <b>
@@ -2200,6 +2209,7 @@ export default function DelegationApp() {
               }
             </strong>
           </div>
+          </details>
         </section>
 
         <section className="adb-column adb-review-column">

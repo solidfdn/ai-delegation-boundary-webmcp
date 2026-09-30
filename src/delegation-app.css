@@ -4264,3 +4264,27 @@ button:focus-visible {
   color:
     #ffffff;
 }
+
+/* Business-first discussion; technical conditions remain available below. */
+.adb-business-discussion { padding: 22px; margin: 20px 0; border: 1px solid #bac7d8; background: #fff; }
+.adb-business-discussion h3 { font-size: 20px; line-height: 1.5; margin: 10px 0; }
+.adb-business-discussion p, .adb-business-details > p { font-size: 14px; line-height: 1.8; color: #334b6b; }
+.adb-business-discussion .adb-task-field { margin: 20px 0; }
+.adb-business-discussion small { display: block; font-size: 12px; line-height: 1.7; color: #536680; margin: 6px 0; }
+.adb-business-discussion textarea { width: 100%; box-sizing: border-box; resize: vertical; padding: 10px; border: 1px solid #9caec6; font: inherit; font-size: 14px; line-height: 1.7; background: white; color: #102640; }
+.adb-business-example { padding: 15px; background: #f3f7fc; border-left: 3px solid #244e95; }
+.adb-business-example p { margin: 8px 0; }
+.adb-business-request { margin: 20px 0; }
+.adb-business-request summary, .adb-business-details > summary { cursor: pointer; padding: 14px 0; color: #244e95; font-weight: 600; line-height: 1.7; }
+.adb-business-request button { width: 100%; margin-top: 10px; padding: 12px; border: 1px solid #244e95; background: #244e95; color: white; cursor: pointer; }
+.adb-business-request button:hover { background: #0c213d; }
+.adb-business-request summary:focus-visible, .adb-business-details > summary:focus-visible { outline: 2px solid #244e95; outline-offset: 3px; }
+.adb-business-details { margin-top: 20px; border-top: 1px solid #bac7d8; }
+[lang="ja"] .adb-business-details .adb-condition { grid-template-columns: minmax(0, 1fr) 20px minmax(80px, 110px); align-items: start; }
+.adb-factor-help { display: block; font-size: 12px; line-height: 1.7; font-weight: 400; margin: 6px 0; color: #536680; }
+[lang="en"] .adb-business-details { margin-top: 0; border-top: 0; }
+[lang="en"] .adb-business-details > summary { display: none; }
+@media (max-width: 480px) {
+ .adb-business-discussion { padding: 16px; }
+ [lang="ja"] .adb-business-details .adb-condition { grid-template-columns: minmax(0, 1fr) 20px 95px; }
+}
